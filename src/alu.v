@@ -25,9 +25,10 @@ module ALU(
     parameter MULT = 4'b1000;
     parameter DIV  = 4'b1001;
 
-    reg [63:0] mult_result;
-    reg [31:0] div_quotient;
-    reg [31:0] div_remainder;
+// Modification1: No need of these extra registers. MULT and DIV work fine as coded now.
+//    reg [63:0] mult_result; 
+//    reg [31:0] div_quotient;
+//    reg [31:0] div_remainder;
 
     assign alu_zero = (alu_result == 32'd0);
 
@@ -77,17 +78,15 @@ module ALU(
                     alu_done <= 1'b1;
                 end
                 MULT: begin
-                    mult_result = alu_srcA * alu_srcB;
-                    hi <= mult_result[63:32];
-                    lo <= mult_result[31:0];
+                    {hi, lo} = alu_srcA * alu_srcB;
+//                    hi <= mult_result[63:32]; Modification 1: Removed unnecessary regs
+//                    lo <= mult_result[31:0]; Modification 1: Removed unnecessary regs
                     alu_done <= 1'b1;
                 end
                 DIV: begin
                     if (alu_srcB != 0) begin
-                        div_quotient = alu_srcA / alu_srcB;
-                        div_remainder = alu_srcA % alu_srcB;
-                        lo <= div_quotient;
-                        hi <= div_remainder;
+                        lo = alu_srcA / alu_srcB; // Modification 1: Removed unnecessary regs
+                        hi = alu_srcA % alu_srcB; // Modification 1: Removed unnecessary regs
                         alu_done <= 1'b1;
                     end else begin
                         overflow <= 1'b1; // Set overflow on divide-by-zero
@@ -101,6 +100,9 @@ module ALU(
                     alu_done <= 1'b1;
                 end
             endcase
+        end
+        else begin
+        alu_done <= 1'b0; // Modification 2: Added condition. Now, alu_done == 1 iff en = 1 and op is done! 
         end
     end
 endmodule
