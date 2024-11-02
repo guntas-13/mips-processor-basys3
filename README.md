@@ -2,6 +2,30 @@
 
 ### Team ALUminati - ES215 Computer Organization and Architecture
 
+## ALU
 <div align = "center">
     <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/master/media/ALU.png" style="width: 100%">
+</div>
+
+<div align = "center">
+    <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/master/media/our_alu.png" style="width: 45%; float: left;">
+    <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/master/media/ALU_modification1.png" style="width: 35%;">
+</div>
+
+<div align = "center">
+    <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/master/media/ALU_waveform_after_modification_latest.png" style="width: 100%">
+</div>
+
+<div align = "center">
+    <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/master/media/ALU_waveform.png" style="width: 100%">
+</div>
+
+## Register File
+<div align = "center">
+    <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/master/media/reg_run.png" style="width: 100%">
+</div>
+
+## 2x1 MUX
+<div align = "center">
+    <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/master/media/mux_run.png" style="width: 100%">
 </div>
