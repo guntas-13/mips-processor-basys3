@@ -30,7 +30,7 @@ module ALU_tb;
 
     initial begin
         clk = 1;
-        forever #0.5 clk = ~clk;  // 1ns period (1000MHz clock)
+        forever #1 clk = ~clk;  // 2ns period (500MHz clock)
     end
 
     initial begin
