@@ -36,8 +36,8 @@ module RegisterFile(
 
             register_done <= 1'b1;
         end
-        else begin
-            register_done <= 1'b0;
-        end
+        // else begin
+        //     register_done <= 1'b0;
+        // end
     end
 endmodule

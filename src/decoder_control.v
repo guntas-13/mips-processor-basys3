@@ -19,12 +19,18 @@ module decoder_control(
     output reg [4:0] rd,
     output reg [4:0] shamt,
     output reg [25:0] jump_address,
-    output reg [3:0] path_index;
+    output reg [3:0] path_index,
+    output reg decoder_done,
+    output reg select_shamt
 );
 
     reg [5:0] opcode;
     reg [5:0] funct;
     reg [15:0] imm;
+
+    initial begin 
+        decoder_done = 1'b0;
+    end
 
     always @(posedge clk) begin
         if (en) begin
@@ -43,11 +49,7 @@ module decoder_control(
             else begin
                 imm_extended <= {16'b0000000000000000, imm};
             end
-        end
-    end
 
-    always @(posedge clk) begin
-        if (en) begin
             case(opcode)
                 6'b000000: begin // R-type
                     RegDst <= 1'b1;
@@ -56,6 +58,7 @@ module decoder_control(
                     MemRead <= 1'b0;
                     MemtoReg <= 2'b00;
                     path_index <= 4'b0001;
+                    select_shamt <= 1'b0;
 
                     /*
                     we have 10 operations defined in the alu.v
@@ -91,9 +94,11 @@ module decoder_control(
                     end
                     else if (funct == 6'b000000) begin // sll
                         ALU_Control <= 4'b0110;
+                        select_shamt <= 1'b1;
                     end
                     else if (funct == 6'b000010) begin // srl
                         ALU_Control <= 4'b0111;
+                        select_shamt <= 1'b1;
                     end
                     else if (funct == 6'b011000) begin // mult
                         ALU_Control <= 4'b1000;
@@ -145,6 +150,7 @@ module decoder_control(
                     ALUSrc <= 1'b1;
                     RegWrite <= 1'b1;
                     path_index <= 4'b0010;
+                    select_shamt <= 1'b0;
                 end
                 6'b101011: begin // sw
                     RegDst <= 1'b0;
@@ -157,6 +163,7 @@ module decoder_control(
                     ALUSrc <= 1'b1;
                     RegWrite <= 1'b0; // in the MemReadWrite.v, we have to send input [31:0] din as output reg [31:0] read_data2 in register_file.v
                     path_index <= 4'b0011;
+                    select_shamt <= 1'b0;
                 end
                 6'b000100: begin // beq
                     RegDst <= 1'b0;
@@ -169,6 +176,7 @@ module decoder_control(
                     ALUSrc <= 1'b0;
                     RegWrite <= 1'b0;
                     path_index <= 4'b0100;
+                    select_shamt <= 1'b0;
                 end
                 6'b001000: begin // addi
                     RegDst <= 1'b0;
@@ -181,6 +189,7 @@ module decoder_control(
                     ALUSrc <= 1'b1;
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
+                    select_shamt <= 1'b0;
                 end
                 6'b001010: begin // slti
                     RegDst <= 1'b0;
@@ -193,6 +202,7 @@ module decoder_control(
                     ALUSrc <= 1'b1;
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
+                    select_shamt <= 1'b0;
                 end
                 6'b001100: begin // andi
                     RegDst <= 1'b0;
@@ -205,6 +215,7 @@ module decoder_control(
                     ALUSrc <= 1'b1;
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
+                    select_shamt <= 1'b0;
                 end
                 6'b001101: begin // ori
                     RegDst <= 1'b0;
@@ -217,6 +228,7 @@ module decoder_control(
                     ALUSrc <= 1'b1;
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
+                    select_shamt <= 1'b0;
                 end
                 // J-Type
                 6'b000010: begin // j
@@ -230,6 +242,7 @@ module decoder_control(
                     ALUSrc <= 1'b0;
                     RegWrite <= 1'b0;
                     path_index <= 4'b0101;
+                    select_shamt <= 1'b0;
                 end
                 6'b000011: begin // jal
                     RegDst <= 1'b0;
@@ -242,9 +255,11 @@ module decoder_control(
                     ALUSrc <= 1'b0;
                     RegWrite <= 1'b1;
                     path_index <= 4'b0110;
+                    select_shamt <= 1'b0;
                 end
 
             endcase
+            decoder_done <= 1'b1;
         end
     end
 
