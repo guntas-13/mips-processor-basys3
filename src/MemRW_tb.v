@@ -85,7 +85,6 @@ initial begin
     addr = 32'd0;
     din = 32'd1;
     #1;
-    en = 0;
     wen = 0;
     #1
     // Read addr 0

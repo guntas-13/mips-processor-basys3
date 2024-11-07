@@ -25,7 +25,6 @@ module RegisterFile(
 
     always @(posedge clk) begin
         if (en) begin
-            register_done <= 1'b0;
 
             read_data1 <= registers[read_reg1];
             read_data2 <= registers[read_reg2];
