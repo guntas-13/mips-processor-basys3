@@ -2,6 +2,7 @@
 
 module ControlUnit(
     input clk,
+    input top_en,
     output ID,
     output IF,
     output EX,
@@ -17,6 +18,7 @@ module ControlUnit(
     wire [31:0] instr_reg;
     reg [3:0] path_index;
     reg [31:0] pc_out;
+    reg [3:0] state;
 
     // Regfile
     reg reg_en;
@@ -157,15 +159,71 @@ module ControlUnit(
     .jump_done(jump_done)
     );
 
+    // STATES
+    parameter s0  = 4'b0000; // Idle State
+    parameter s1  = 4'b0001; // IF
+    parameter s2  = 4'b0010; // Redundant State
+    parameter s3   = 4'b0011; // Redundant State
+    parameter s4  = 4'b0100; // ID
+    parameter s5  = 4'b0101; // REG
+    parameter s6  = 4'b0110;
+    parameter s7  = 4'b0111;
+    parameter s8 = 4'b1000;
+    parameter s9  = 4'b1001;
+    parameter s10  = 4'b1010;
+
 
     initial begin
         pc <= 32'd0;
         pc_out <= 32'd0;
+        state <= s0;
     end
 
+    
     always @ (posedge clk)
     begin
-
+        case(state) begin
+            s0: begin // Idle State
+                if (top_en) state <= s1;
+                else state <= s0;
+            end
+            s1: begin // IF
+                if(mem_done) begin
+                    state <= s2;
+                    mem_done <= 0;
+                    mem_en <= 0;
+                end
+                else begin
+                    state <= s1;
+                    mem_en <= 1;
+                    IF <= 1;
+                end
+            end
+            s2: begin // Redundant State
+                state <= s3;
+            end
+            s3: begin // Redundant State
+                state <= s4;
+            end
+            s4: begin // ID
+                if(decoder_done) begin
+                    if (path_index == 4'd0) begin
+                        // state <= write_back;
+                    end
+                    else if (path_index ==4'd5) begin
+                        // state <= jump;
+                    else state <= s5; // REG
+                    decoder_done <= 0;
+                    decoder_en <= 0;
+                end
+                else begin
+                    state <= s4;
+                    decoder_en <= 1;
+                    ID <= 1;
+                    IF <= 0;
+                end
+            end
+        end
         
     end
 
