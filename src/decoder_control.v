@@ -12,7 +12,7 @@ module decoder_control(
     output reg [3:0] ALU_Control, // this is the input [3:0] alu_control in the alu.v
     output reg MemWrite, // this is the input wen in MemReadWrite.v
     output reg ALUSrc, // this is the select line in the MUX for the second operand of the ALU (either the immediate value or the value from the register file)
-    output reg RegWrite // this is the input reg_write in the register_file.v
+    output reg RegWrite, // this is the input reg_write in the register_file.v
     output reg [31:0] imm_extended, // this is the immediate value extended to 32 bits
     output reg [4:0] rs,
     output reg [4:0] rt,

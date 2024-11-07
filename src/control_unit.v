@@ -3,13 +3,13 @@
 module ControlUnit(
     input clk,
     input top_en,
-    output ID,
-    output IF,
-    output EX,
-    output MEM,
-    output WB,
-    output JU,
-    output BR
+    output reg ID,
+    output reg IF,
+    output reg EX,
+    output reg MEM,
+    output reg WB,
+    output reg JU,
+    output reg BR
 );
 
     // Variables
@@ -126,7 +126,7 @@ module ControlUnit(
     .rd(rd),
     .shamt(shamt),
     .jump_address(jump_address),
-    .path_index(path_index)
+    .path_index(path_index),
     .decoder_done(decoder_done)
     );
 
@@ -160,71 +160,69 @@ module ControlUnit(
     );
 
     // STATES
-    parameter s0  = 4'b0000; // Idle State
-    parameter s1  = 4'b0001; // IF
-    parameter s2  = 4'b0010; // Redundant State
-    parameter s3   = 4'b0011; // Redundant State
-    parameter s4  = 4'b0100; // ID
-    parameter s5  = 4'b0101; // REG
-    parameter s6  = 4'b0110;
-    parameter s7  = 4'b0111;
-    parameter s8 = 4'b1000;
-    parameter s9  = 4'b1001;
-    parameter s10  = 4'b1010;
-
+    parameter IDLESRC = 4'b0000;
+    parameter FETCH = 4'b0001;
+    parameter RED1 = 4'b0010;
+    parameter RED2 = 4'b0011;
+    parameter DECODE  = 4'b0100;
+    parameter REGFILE  = 4'b0101;
+    parameter EXECUTE  = 4'b0110;
+    parameter MEMORY  = 4'b0111;
+    parameter RED3 = 4'b1000;
+    parameter RED4  = 4'b1001;
+    parameter REGWRITE  = 4'b1010;
+    parameter JUMP = 4'b1011;
+    parameter BRANCH = 4'b1100;
+    parameter SINK = 4'b1101; 
 
     initial begin
         pc <= 32'd0;
         pc_out <= 32'd0;
-        state <= s0;
+        state <= IDLESRC;
     end
 
     
     always @ (posedge clk)
     begin
-        case(state) begin
-            s0: begin // Idle State
-                if (top_en) state <= s1;
-                else state <= s0;
+        case(state)
+            IDLESRC: begin
+                if (top_en) state <= FETCH;
+                else state <= IDLESRC;
             end
-            s1: begin // IF
-                if(mem_done) begin
-                    state <= s2;
-                    mem_done <= 0;
-                    mem_en <= 0;
-                end
-                else begin
-                    state <= s1;
-                    mem_en <= 1;
-                    IF <= 1;
-                end
+            FETCH: begin
+                state <= RED1;
+                mem_en <= 1;
+                mem_ren <= 1;
+                IF <= 1;
             end
-            s2: begin // Redundant State
-                state <= s3;
+            RED1: begin
+                state <= RED2;
             end
-            s3: begin // Redundant State
-                state <= s4;
+            RED2: begin 
+                state <= DECODE;
             end
-            s4: begin // ID
+            DECODE: begin
                 if(decoder_done) begin
                     if (path_index == 4'd0) begin
-                        // state <= write_back;
+                        state <= REGWRITE;
                     end
-                    else if (path_index ==4'd5) begin
-                        // state <= jump;
-                    else state <= s5; // REG
+                    else if (path_index == 4'd5) begin
+                        state <= JUMP;
+                    end
+                    else state <= REGFILE;
                     decoder_done <= 0;
                     decoder_en <= 0;
                 end
                 else begin
-                    state <= s4;
+                    state <= DECODE;
                     decoder_en <= 1;
                     ID <= 1;
                     IF <= 0;
+                    mem_en <= 0;
+                    mem_ren <= 0;
                 end
             end
-        end
-        
+        endcase    
     end
 
 

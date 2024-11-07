@@ -3,7 +3,7 @@
 module MemReadWrite(
 input clk,
 input en,
-input ren;
+input ren,
 input wen,
 input [15:0] addr,
 input [31:0] din,
