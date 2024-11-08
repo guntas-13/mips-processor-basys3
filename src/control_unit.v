@@ -17,7 +17,6 @@ module ControlUnit(
     reg [31:0] pc;
     wire [31:0] instr_reg;
     reg [3:0] path_index;
-    reg [31:0] pc_out;
     reg [3:0] state;
 
     // Regfile
@@ -106,6 +105,7 @@ module ControlUnit(
     reg [4:0] shamt;
     reg [25:0] jump_address;
     reg decoder_done;
+    reg select_shamt;
 
     decoder_control decoder(
     .clk(clk),
@@ -127,7 +127,8 @@ module ControlUnit(
     .shamt(shamt),
     .jump_address(jump_address),
     .path_index(path_index),
-    .decoder_done(decoder_done)
+    .decoder_done(decoder_done),
+    .select_shamt(select_shamt)
     );
 
     //Branch
@@ -140,7 +141,7 @@ module ControlUnit(
     .alu_zero(alu_zero),
     .imm(imm_extended),
     .pc(pc),
-    .pc_out(pc_out),
+    .pc_out(pc),
     .branch_done(branch_done)
     );
 
@@ -155,8 +156,44 @@ module ControlUnit(
     .addr(jump_address),
     .path_index(path_index),
     .reg_addr(read_data1),
-    .pc_out(pc_out),
+    .pc_out(pc),
     .jump_done(jump_done)
+    );
+
+    // MUX
+    ALU_SRC_MUX alu_srcA_mux(
+    .read_data1(read_data1),
+    .shamt(shamt),
+    .select_shamt(select_shamt),
+    .alu_srcA(alu_srcA)
+    );
+
+    MUX2x1 alu_srcB_mux(
+    .input0(read_data2),
+    .input1(imm_extended),
+    .SEL(ALUSrc),
+    .mux_out(alu_srcB)
+    );
+    
+    MUX4x2_RegFile write_reg_mux(
+    .rt(rt),
+    .rd(rd),
+    .fix_ra(5'b11111),
+    .SEL0_RegDst(RegDst),
+    .SEL1_Jump(Jump),
+    .mux_out(write_reg)
+    );
+
+    MUX8x3_RegWrite write_reg_data_mux(
+    .alu_result(alu_result),
+    .dout(mem_dout),
+    .hi(hi),
+    .lo(lo),
+    .PC_updated(pc),   // For jal instruction need PC + 4 to be written to register file
+    .SEL0_MemtoReg0(MemtoReg[0]),
+    .SEL0_MemtoReg1(MemtoReg[1]),
+    .SEL2_Jump(Jump),            // For jal instruction need PC + 4 to be written to register file
+    .mux_out(write_data)
     );
 
     // STATES
@@ -177,11 +214,9 @@ module ControlUnit(
 
     initial begin
         pc <= 32'd0;
-        pc_out <= 32'd0;
         state <= IDLESRC;
     end
 
-    
     always @ (posedge clk)
     begin
         case(state)
@@ -193,7 +228,13 @@ module ControlUnit(
                 state <= RED1;
                 mem_en <= 1;
                 mem_ren <= 1;
+                mem_wen <= 0;
                 IF <= 1;
+                EX <= 0;
+                MEM <= 0;
+                WB <= 0;
+                JU <= 0;
+                BR <= 0;
             end
             RED1: begin
                 state <= RED2;
@@ -212,6 +253,7 @@ module ControlUnit(
                     else state <= REGFILE;
                     decoder_done <= 0;
                     decoder_en <= 0;
+                    pc <= pc + 1;
                 end
                 else begin
                     state <= DECODE;
@@ -222,10 +264,118 @@ module ControlUnit(
                     mem_ren <= 0;
                 end
             end
+            REGFILE: begin
+                if(register_done) begin
+                    if ((path_index == 4'd1) | (path_index == 4'd2) | (path_index == 4'd3) | (path_index == 4'd4) | (path_index == 4'd8)) begin
+                        state <= EXECUTE;
+                    end
+                    else if (path_index == 4'd6) begin
+                        state <= REGWRITE;
+                    end
+                    else begin //(path_index == 4'd7)
+                        state <= JUMP;
+                    end
+                    register_done <= 0;
+                    reg_en <= 0;
+                end
+                else begin
+                    state <= REGFILE;
+                    reg_en <= 1;
+                    ID <= 0;
+
+                end
+            end
+            EXECUTE: begin
+                if (alu_done) begin
+                    if (path_index == 4'd1) begin
+                        state <= REGWRITE;
+                    end
+                    else if ((path_index == 4'd2) | (path_index == 4'd3)) begin
+                        state <= MEMORY;
+                    end
+                    else if (path_index == 4'd8) begin
+                        state <= FETCH;
+                    end
+                    else begin // (path_index == 4'd4)
+                        state <= BRANCH;
+                    end
+                    alu_en <= 0;
+                    alu_done <= 0;
+                end
+                else begin
+                    state <= EXECUTE;
+                    alu_en <= 1;
+                    EX <= 1;
+                end
+            end
+            MEMORY: begin
+                if (path_index == 4'd2) begin
+                    state <= RED3;
+                    mem_en <= 1;
+                    mem_ren <= 1;
+                end
+                else begin // (path_index == 4'd3)
+                    state <= FETCH;
+                    mem_en <= 1;
+                    mem_wen <= 1;
+                end
+                MEM <= 1;
+                EX <= 0;
+            end
+            RED3: begin
+                state <= RED4;
+            end
+            RED4: begin
+                state <= REGWRITE;
+            end
+            REGWRITE: begin
+                if (register_done) begin
+                    if (path_index == 4'd6) begin
+                        state <= JUMP;
+                    end
+                    else begin // (path_index == 4'd0) | (path_index == 4'd1) | (path_index == 4'd2)
+                        state <= FETCH;
+                    end
+                    register_done <= 0;
+                    reg_en <= 0;
+                end
+                else begin
+                    state <= REGWRITE;
+                    WB <= 1;
+                    reg_en <= 1;
+                    mem_en <= 0;
+                    mem_ren <= 0;
+                    MEM <= 0;
+                end
+            end
+            JUMP: begin
+                if (jump_done) begin
+                    state <= FETCH;
+                    jump_done <= 0;
+                    jump_en <= 0;
+                end
+                else begin
+                    state <= JUMP;
+                    jump_en <= 1;
+                    JU <= 1;
+                    ID <= 0;
+                    WB <= 0;
+                end
+            end
+            BRANCH: begin
+                if (branch_done) begin
+                    state <= FETCH;
+                    branch_done <= 0;
+                    branch_en <= 0;
+                end
+                else begin
+                    state <= BRANCH;
+                    branch_en <= 1;
+                    BR <= 1;
+                    EX <= 0;
+                end
+            end
         endcase    
     end
-
-
-
 
 endmodule

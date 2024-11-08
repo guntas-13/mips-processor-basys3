@@ -5,7 +5,7 @@ input clk,
 input en,
 input ren,
 input wen,
-input [15:0] addr,
+input [15:0] addr, // This should be word address
 input [31:0] din,
 output [31:0] dout); 
 

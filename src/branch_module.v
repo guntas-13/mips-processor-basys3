@@ -14,7 +14,7 @@ initial begin
     branch_done = 1'b0;
 end
 always @ (posedge en) begin
-    pc_out <= (branch & en & alu_zero)? pc + (imm << 2): pc;
+    pc_out <= (branch & en & alu_zero)? pc + imm: pc;
     branch_done <= 1'b1;
 end
 

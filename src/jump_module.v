@@ -17,10 +17,10 @@ module JumpModule(
 
     always @ (posedge en) begin
         if (jump & (path_index==4'd5 | path_index==4'd6)) begin
-            pc_out <= {pc[31:28], addr, 2'b00};
+            pc_out <= {pc[31:26], addr};
         end
         else if(jump & path_index==4'd8) begin
-            pc_out <= reg_addr;
+            pc_out <= reg_addr/4;
         end
         else begin
             pc_out <= pc;
