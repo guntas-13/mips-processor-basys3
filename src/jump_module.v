@@ -24,7 +24,7 @@ module JumpModule(
                 pc_out <= {pc[31:26], addr};
             end
             else if(jump & path_index==4'd8) begin
-                pc_out <= reg_addr/4;
+                pc_out <= reg_addr;
             end
             else begin
                 pc_out <= pc;

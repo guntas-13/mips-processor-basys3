@@ -3,6 +3,8 @@
 module ControlUnit(
     input clk,
     input top_en,
+    input infer,
+    input [15:0] infer_addr,
     output reg ID,
     output reg IF,
     output reg REG,
@@ -10,7 +12,9 @@ module ControlUnit(
     output reg MEM,
     output reg WB,
     output reg JU,
-    output reg BR
+    output reg BR,
+    output reg SK,
+    output infer_data
 );
 
     // Variables
@@ -110,6 +114,7 @@ module ControlUnit(
     reg decoder_done;
     wire decoder_done_wire;
     wire select_shamt;
+//    wire exit_instruction;
 
     decoder_control decoder(
     .clk(clk),
@@ -133,6 +138,7 @@ module ControlUnit(
     .path_index(path_index),
     .decoder_done(decoder_done_wire),
     .select_shamt(select_shamt)
+//    .exit_instruction(exit_instruction)
     );
 
     //Branch
@@ -226,6 +232,8 @@ module ControlUnit(
         pc <= 32'd0;
         state <= IDLESRC;
     end
+    
+    assign infer_data = mem_dout;
 
     always @ (posedge (clk & top_en))
     begin
@@ -264,6 +272,9 @@ module ControlUnit(
                     end
                     else if (path_index == 4'd5) begin
                         state <= JUMP;
+                    end
+                    else if (path_index == 4'd9) begin
+                        state <= SINK;
                     end
                     else state <= REGFILE;
                     decoder_done <= 0;
@@ -413,6 +424,17 @@ module ControlUnit(
                     EX <= 0;
                     branch_done <= branch_done_wire;
                 end
+            end
+            SINK: begin
+                if (infer) begin
+                    mem_en <= 1;
+                    mem_ren <= 1;
+                    mem_wen <= 0;
+                    mem_addr <= infer_addr;
+                end
+                state <= SINK;
+                ID <= 0;
+                SK <= 1;
             end
         endcase    
     end
