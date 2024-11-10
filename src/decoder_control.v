@@ -61,7 +61,6 @@ module decoder_control(
                     Branch <= 1'b0;
                     MemRead <= 1'b0;
                     MemtoReg <= 2'b00;
-                    path_index <= 4'b0001;
                     select_shamt <= 1'b0;
                     exit_instruction <= 1'b0;
 
@@ -81,29 +80,37 @@ module decoder_control(
                     
                     if (funct == 6'b100000) begin // add
                         ALU_Control <= 4'b0000;
+                        path_index <= 4'b0001;
                     end
                     else if (funct == 6'b100010) begin // sub
                         ALU_Control <= 4'b0001;
+                        path_index <= 4'b0001;
                     end
                     else if (funct == 6'b100100) begin // and
                         ALU_Control <= 4'b0010;
+                        path_index <= 4'b0001;
                     end
                     else if (funct == 6'b100101) begin // or
                         ALU_Control <= 4'b0011;
+                        path_index <= 4'b0001;
                     end
                     else if (funct == 6'b101010) begin // slt
                         ALU_Control <= 4'b0101;
+                        path_index <= 4'b0001;
                     end
                     else if (funct == 6'b100111) begin // nor
                         ALU_Control <= 4'b0100;
+                        path_index <= 4'b0001;
                     end
                     else if (funct == 6'b000000) begin // sll
                         ALU_Control <= 4'b0110;
                         select_shamt <= 1'b1;
+                        path_index <= 4'b0001;
                     end
                     else if (funct == 6'b000010) begin // srl
                         ALU_Control <= 4'b0111;
                         select_shamt <= 1'b1;
+                        path_index <= 4'b0001;
                     end
                     else if (funct == 6'b011000) begin // mult
                         ALU_Control <= 4'b1000;
@@ -115,6 +122,7 @@ module decoder_control(
                     end
                     else begin
                         ALU_Control <= 4'b0000;
+                        path_index <= 4'b0001;
                     end
 
                     MemWrite <= 1'b0;
@@ -297,7 +305,7 @@ module decoder_control(
                     MemWrite <= 1'b0;
                     ALUSrc <= 1'b0;
                     RegWrite <= 1'b0;
-                    path_index <= 4'b0111;
+                    path_index <= 4'b1001;
                     select_shamt <= 1'b0;
                     decoder_done <= 1'b1;
                     exit_instruction <= 1'b1;
