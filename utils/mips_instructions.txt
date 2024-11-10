@@ -1,3 +1,7 @@
+main: lw $a0, 0($gp)
+jal fact
+sw $v0, 1($gp)
+sysend
 fact: addi $sp, $sp, -8
 sw $ra, 4($sp)
 sw $a0, 0($sp)

@@ -4,7 +4,7 @@ OPCODES = {
     "ori": "001101", "add": "000000", "sub": "000000", "and": "000000",
     "or": "000000", "nor": "000000", "slt": "000000", "sll": "000000",
     "srl": "000000", "mult": "000000", "div": "000000", "mflo": "000000",
-    "mfhi": "000000", "jr": "000000"
+    "mfhi": "000000", "jr": "000000", "sysend": "111111"
 }
 
 FUNCTS = {
@@ -127,6 +127,9 @@ def parse_instruction(line, labels, current_address):
                 else:
                     raise ValueError(f"Undefined label: {label}")
                 bin_instruction = f"{opcode_bin}{rs}{rt}{imm}"
+            
+            elif opcode == 'sysend':
+                bin_instruction = '11111000000000000000000000000000'
 
             elif opcode in {"j", "jal"}:
                 # J-Type Jump Instruction, expecting format: `j label` or `jal label`
@@ -195,8 +198,3 @@ def assemble_mips(input_file, output_file):
     
     # Write the machine code to the output file
     write_machine_code_to_file(machine_code, output_file)
-
-
-input_file = './utils/mips_instructions.txt'
-output_file = './utils/mips_machine_code.txt'
-assemble_mips(input_file, output_file)

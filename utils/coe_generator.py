@@ -1,3 +1,9 @@
+from mips_parser import *
+
+input_file = './utils/mips_instructions.txt'
+output_file = './utils/mips_machine_code.txt'
+assemble_mips(input_file, output_file)
+
 mem_words = 51200  # Total memory words
 
 with open("./utils/mips_machine_code.txt", "r") as mc_file:
@@ -14,9 +20,6 @@ with open("./src/data.coe", "w") as f:
         if i < text_segment_size:
             # Write the machine code instructions in the text segment
             f.write(f"{machine_code_lines[i]},\n")
-        elif i == text_segment_size:
-            # the terminating instruction with opcode = 111111
-            f.write("11111100000000000000000000000000,\n")
         elif i < data_segment_start:
             # Fill with zeros between text and data segments if any space remains
             f.write("00000000000000000000000000000000,\n")
