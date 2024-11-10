@@ -120,11 +120,11 @@ module decoder_control(
                     RegWrite <= 1'b1;
 
                     // for mflo and mfhi
-                    if (funct == 6'b010000) begin // mflo
+                    if (funct == 6'b010010) begin // mflo
                         MemtoReg <= 2'b11;
                         path_index <= 4'b0000;
                     end
-                    else if (funct == 6'b010010) begin // mfhi
+                    else if (funct == 6'b010000) begin // mfhi
                         MemtoReg <= 2'b10;
                         path_index <= 4'b0000;
                     end

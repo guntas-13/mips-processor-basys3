@@ -11,5 +11,5 @@ jal fact
 lw $a0, 0($sp)
 lw $ra, 4($sp)
 addi $sp, $sp, 8
-mul $v0, $a0, $v0
+mult $v0, $a0, $v0
 jr $ra
