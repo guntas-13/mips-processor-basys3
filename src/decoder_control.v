@@ -21,7 +21,8 @@ module decoder_control(
     output reg [25:0] jump_address,
     output reg [3:0] path_index,
     output reg decoder_done,
-    output reg select_shamt
+    output reg select_shamt,
+    output reg exit_instruction // this is for the exit instruction - opcode = 111111
 );
 
     wire [5:0] opcode;
@@ -62,6 +63,7 @@ module decoder_control(
                     MemtoReg <= 2'b00;
                     path_index <= 4'b0001;
                     select_shamt <= 1'b0;
+                    exit_instruction <= 1'b0;
 
                     /*
                     we have 10 operations defined in the alu.v
@@ -156,6 +158,7 @@ module decoder_control(
                     path_index <= 4'b0010;
                     select_shamt <= 1'b0;
                     decoder_done <= 1'b1;
+                    exit_instruction <= 1'b0;
                     
                 end
                 6'b101011: begin // sw
@@ -171,6 +174,7 @@ module decoder_control(
                     path_index <= 4'b0011;
                     select_shamt <= 1'b0;
                     decoder_done <= 1'b1;
+                    exit_instruction <= 1'b0;
                     
                 end
                 6'b000100: begin // beq
@@ -186,6 +190,7 @@ module decoder_control(
                     path_index <= 4'b0100;
                     select_shamt <= 1'b0;
                     decoder_done <= 1'b1;
+                    exit_instruction <= 1'b0;
                     
                 end
                 6'b001000: begin // addi
@@ -201,6 +206,7 @@ module decoder_control(
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
                     decoder_done <= 1'b1;
+                    exit_instruction <= 1'b0;
                     
                 end
                 6'b001010: begin // slti
@@ -216,6 +222,7 @@ module decoder_control(
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
                     decoder_done <= 1'b1;
+                    exit_instruction <= 1'b0;
                     
                 end
                 6'b001100: begin // andi
@@ -231,6 +238,7 @@ module decoder_control(
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
                     decoder_done <= 1'b1;
+                    exit_instruction <= 1'b0;
                     
                 end
                 6'b001101: begin // ori
@@ -245,7 +253,8 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
-                    decoder_done <= 1'b1;                    
+                    decoder_done <= 1'b1;   
+                    exit_instruction <= 1'b0;                 
                 end
                 // J-Type
                 6'b000010: begin // j
@@ -261,6 +270,7 @@ module decoder_control(
                     path_index <= 4'b0101;
                     select_shamt <= 1'b0;
                     decoder_done <= 1'b1;
+                    exit_instruction <= 1'b0;
                 end
                 6'b000011: begin // jal
                     RegDst <= 1'b0;
@@ -275,7 +285,22 @@ module decoder_control(
                     path_index <= 4'b0110;
                     select_shamt <= 1'b0;
                     decoder_done <= 1'b1;
-                    
+                    exit_instruction <= 1'b0;
+                end
+                6'b111111: begin // exit
+                    RegDst <= 1'b0;
+                    Jump <= 1'b0;
+                    Branch <= 1'b0;
+                    MemRead <= 1'b0;
+                    MemtoReg <= 2'b00;
+                    ALU_Control <= 4'b0000; // dummy
+                    MemWrite <= 1'b0;
+                    ALUSrc <= 1'b0;
+                    RegWrite <= 1'b0;
+                    path_index <= 4'b0111;
+                    select_shamt <= 1'b0;
+                    decoder_done <= 1'b1;
+                    exit_instruction <= 1'b1;
                 end
             endcase
         end
