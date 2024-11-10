@@ -24,9 +24,12 @@ module decoder_control(
     output reg select_shamt
 );
 
-    reg [5:0] opcode;
-    reg [5:0] funct;
-    reg [15:0] imm;
+    wire [5:0] opcode;
+    wire [5:0] funct;
+    wire [15:0] imm;
+    assign opcode = instr[31:26];
+    assign funct = instr[5:0];
+    assign imm = instr[15:0];
 
     initial begin 
         decoder_done = 1'b0;
@@ -34,13 +37,13 @@ module decoder_control(
 
     always @(posedge clk) begin
         if (en) begin
-            opcode <= instr[31:26];
-            funct <= instr[5:0];
+//            opcode <= instr[31:26];
+//            funct <= instr[5:0];
             rs <= instr[25:21];
             rt <= instr[20:16];
             rd <= instr[15:11];
             shamt <= instr[10:6];
-            imm <= instr[15:0];
+//            imm <= instr[15:0];
             jump_address <= instr[25:0];
             // imm_extended <= {imm[15], imm};
             if(imm[15] == 1'b1) begin
@@ -137,9 +140,11 @@ module decoder_control(
                     else begin
                         Jump <= 1'b0;
                     end
+                    
 
                 end
                 6'b100010: begin // lw
+                    $display("Load Word");
                     RegDst <= 1'b0;
                     Jump <= 1'b0;
                     Branch <= 1'b0;
@@ -151,6 +156,7 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0010;
                     select_shamt <= 1'b0;
+                    
                 end
                 6'b101011: begin // sw
                     RegDst <= 1'b0;
@@ -164,6 +170,7 @@ module decoder_control(
                     RegWrite <= 1'b0; // in the MemReadWrite.v, we have to send input [31:0] din as output reg [31:0] read_data2 in register_file.v
                     path_index <= 4'b0011;
                     select_shamt <= 1'b0;
+                    
                 end
                 6'b000100: begin // beq
                     RegDst <= 1'b0;
@@ -177,6 +184,7 @@ module decoder_control(
                     RegWrite <= 1'b0;
                     path_index <= 4'b0100;
                     select_shamt <= 1'b0;
+                    
                 end
                 6'b001000: begin // addi
                     RegDst <= 1'b0;
@@ -190,6 +198,7 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
+                    
                 end
                 6'b001010: begin // slti
                     RegDst <= 1'b0;
@@ -203,6 +212,7 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
+                    
                 end
                 6'b001100: begin // andi
                     RegDst <= 1'b0;
@@ -216,6 +226,7 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
+                    
                 end
                 6'b001101: begin // ori
                     RegDst <= 1'b0;
@@ -229,6 +240,7 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
+                    
                 end
                 // J-Type
                 6'b000010: begin // j
@@ -243,6 +255,7 @@ module decoder_control(
                     RegWrite <= 1'b0;
                     path_index <= 4'b0101;
                     select_shamt <= 1'b0;
+                    decoder_done <= 1'b1;
                 end
                 6'b000011: begin // jal
                     RegDst <= 1'b0;
@@ -256,10 +269,13 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0110;
                     select_shamt <= 1'b0;
+                    
                 end
-
             endcase
             decoder_done <= 1'b1;
+        end
+        else begin
+            decoder_done <= 1'b0;
         end
     end
 

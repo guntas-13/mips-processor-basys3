@@ -15,20 +15,21 @@ module ControlUnit(
     // Variables
     reg [31:0] registers [0:31];
     reg [31:0] pc;
-    wire [31:0] instr_reg;
-    reg [3:0] path_index;
+    reg [31:0] instr_reg;
     reg [3:0] state;
+    wire [31:0] pc_out;
+    wire [3:0] path_index;
 
     // Regfile
     reg reg_en;
     reg reg_write;
     reg [4:0] read_reg1;
     reg [4:0] read_reg2;
-    reg [4:0] write_reg;
-    reg [31:0] write_data;
-    reg [31:0] read_data1;
-    reg [31:0] read_data2;
-    reg register_done;
+    wire [4:0] write_reg;
+    wire [31:0] write_data;
+    wire [31:0] read_data1;
+    wire [31:0] read_data2;
+    wire register_done;
 
     RegisterFile regs(
     .clk(clk),
@@ -46,13 +47,13 @@ module ControlUnit(
     // ALU
     reg alu_en;
     reg [3:0] alu_control;
-    reg [31:0] alu_srcA;
-    reg [31:0] alu_srcB;
-    reg [31:0] alu_result;
-    reg [31:0] hi;
-    reg [31:0] lo;
-    reg overflow;
-    reg alu_done;
+    wire [31:0] alu_srcA;
+    wire [31:0] alu_srcB;
+    wire [31:0] alu_result;
+    wire [31:0] hi;
+    wire [31:0] lo;
+    wire overflow;
+    wire alu_done;
     wire alu_zero;
 
     ALU alu(
@@ -89,23 +90,23 @@ module ControlUnit(
 
     //Decoder
     reg decoder_en;
-    reg RegDst; // will go as select line in the MUX for instr[20:16] (rt) or instr[15:11] (rd)
-    reg Jump;
-    reg Branch;
-    reg MemRead; // this is the input ren in MemReadWrite.v
-    reg MemWrite; // this is the input wen in MemReadWrite.v
-    reg [1:0] MemtoReg; // this is the select line in the MUX for the data to be written to the register file from the read data from the memory or the ALU output
-    reg [3:0] ALU_Control; // this is the input [3:0] alu_control in the alu.v
-    reg ALUSrc; // this is the select line in the MUX for the second operand of the ALU (either the immediate value or the value from the register file)
-    reg RegWrite; // this is the input reg_write in the register_file.v
-    reg [31:0] imm_extended; // this is the immediate value extended to 32 bits
-    reg [4:0] rs;
-    reg [4:0] rt;
-    reg [4:0] rd;
-    reg [4:0] shamt;
-    reg [25:0] jump_address;
-    reg decoder_done;
-    reg select_shamt;
+    wire RegDst; // will go as select line in the MUX for instr[20:16] (rt) or instr[15:11] (rd)
+    wire Jump;
+    wire Branch;
+    wire MemRead; // this is the input ren in MemReadWrite.v
+    wire MemWrite; // this is the input wen in MemReadWrite.v
+    wire [1:0] MemtoReg; // this is the select line in the MUX for the data to be written to the register file from the read data from the memory or the ALU output
+    wire [3:0] ALU_Control; // this is the input [3:0] alu_control in the alu.v
+    wire ALUSrc; // this is the select line in the MUX for the second operand of the ALU (either the immediate value or the value from the register file)
+    wire RegWrite; // this is the input reg_write in the register_file.v
+    wire [31:0] imm_extended; // this is the immediate value extended to 32 bits
+    wire [4:0] rs;
+    wire [4:0] rt;
+    wire [4:0] rd;
+    wire [4:0] shamt;
+    wire [25:0] jump_address;
+    wire decoder_done;
+    wire select_shamt;
 
     decoder_control decoder(
     .clk(clk),
@@ -133,30 +134,32 @@ module ControlUnit(
 
     //Branch
     reg branch_en;
-    reg branch_done;
+    wire branch_done;
 
     BranchModule branch(
+    .clk(clk),
     .en(branch_en),
     .branch(Branch),
     .alu_zero(alu_zero),
     .imm(imm_extended),
     .pc(pc),
-    .pc_out(pc),
+    .pc_out(pc_out),
     .branch_done(branch_done)
     );
 
     //Jump 
     reg jump_en;
-    reg jump_done;
+    wire jump_done;
 
     JumpModule jump(
+    .clk(clk),
     .en(jump_en),
     .jump(Jump),
     .pc(pc),
     .addr(jump_address),
     .path_index(path_index),
     .reg_addr(read_data1),
-    .pc_out(pc),
+    .pc_out(pc_out),
     .jump_done(jump_done)
     );
 
@@ -191,7 +194,7 @@ module ControlUnit(
     .lo(lo),
     .PC_updated(pc),   // For jal instruction need PC + 4 to be written to register file
     .SEL0_MemtoReg0(MemtoReg[0]),
-    .SEL0_MemtoReg1(MemtoReg[1]),
+    .SEL1_MemtoReg1(MemtoReg[1]),
     .SEL2_Jump(Jump),            // For jal instruction need PC + 4 to be written to register file
     .mux_out(write_data)
     );
@@ -201,20 +204,25 @@ module ControlUnit(
     parameter FETCH = 4'b0001;
     parameter RED1 = 4'b0010;
     parameter RED2 = 4'b0011;
-    parameter DECODE  = 4'b0100;
-    parameter REGFILE  = 4'b0101;
-    parameter EXECUTE  = 4'b0110;
-    parameter MEMORY  = 4'b0111;
-    parameter RED3 = 4'b1000;
-    parameter RED4  = 4'b1001;
-    parameter REGWRITE  = 4'b1010;
-    parameter JUMP = 4'b1011;
-    parameter BRANCH = 4'b1100;
-    parameter SINK = 4'b1101; 
+    parameter RED3 = 4'b0100;
+    parameter DECODE  = 4'b0101;
+    parameter REGFILE  = 4'b0110;
+    parameter EXECUTE  = 4'b0111;
+    parameter MEMORY  = 4'b1000;
+    parameter RED4 = 4'b1001;
+    parameter RED5 = 4'b1010;
+    parameter RED6 = 4'b1011;
+    parameter REGWRITE  = 4'b1100;
+    parameter JUMP = 4'b1101;
+    parameter BRANCH = 4'b1110;
+    parameter SINK = 4'b1111; 
 
     initial begin
         pc <= 32'd0;
         state <= IDLESRC;
+        registers[0] <= 32'd0;
+        registers[29] <= 32'd51199;
+        registers[28] <= 32'd6300;
     end
 
     always @ (posedge clk)
@@ -229,6 +237,7 @@ module ControlUnit(
                 mem_en <= 1;
                 mem_ren <= 1;
                 mem_wen <= 0;
+                mem_addr <= pc[15:0];
                 IF <= 1;
                 EX <= 0;
                 MEM <= 0;
@@ -240,7 +249,11 @@ module ControlUnit(
                 state <= RED2;
             end
             RED2: begin 
+                state <= RED3;
+            end
+            RED3: begin
                 state <= DECODE;
+                instr_reg <= mem_dout;
             end
             DECODE: begin
                 if(decoder_done) begin
@@ -251,7 +264,7 @@ module ControlUnit(
                         state <= JUMP;
                     end
                     else state <= REGFILE;
-                    decoder_done <= 0;
+//                    decoder_done <= 0;
                     decoder_en <= 0;
                     pc <= pc + 1;
                 end
@@ -275,7 +288,7 @@ module ControlUnit(
                     else begin //(path_index == 4'd7)
                         state <= JUMP;
                     end
-                    register_done <= 0;
+//                    register_done <= 0;
                     reg_en <= 0;
                 end
                 else begin
@@ -300,7 +313,7 @@ module ControlUnit(
                         state <= BRANCH;
                     end
                     alu_en <= 0;
-                    alu_done <= 0;
+//                    alu_done <= 0;
                 end
                 else begin
                     state <= EXECUTE;
@@ -310,22 +323,28 @@ module ControlUnit(
             end
             MEMORY: begin
                 if (path_index == 4'd2) begin
-                    state <= RED3;
+                    state <= RED4;
                     mem_en <= 1;
                     mem_ren <= 1;
+                    mem_addr <= alu_result[15:0];
                 end
                 else begin // (path_index == 4'd3)
                     state <= FETCH;
                     mem_en <= 1;
                     mem_wen <= 1;
+                    mem_addr <= alu_result[15:0];
+                    mem_din <= read_data2;
                 end
                 MEM <= 1;
                 EX <= 0;
             end
-            RED3: begin
+            RED4: begin
                 state <= RED4;
             end
-            RED4: begin
+            RED5: begin
+                state <= RED6;
+            end
+            RED6: begin
                 state <= REGWRITE;
             end
             REGWRITE: begin
@@ -336,7 +355,7 @@ module ControlUnit(
                     else begin // (path_index == 4'd0) | (path_index == 4'd1) | (path_index == 4'd2)
                         state <= FETCH;
                     end
-                    register_done <= 0;
+//                    register_done <= 0;
                     reg_en <= 0;
                 end
                 else begin
@@ -351,8 +370,9 @@ module ControlUnit(
             JUMP: begin
                 if (jump_done) begin
                     state <= FETCH;
-                    jump_done <= 0;
+//                    jump_done <= 0;
                     jump_en <= 0;
+                    pc <= pc_out;
                 end
                 else begin
                     state <= JUMP;
@@ -365,8 +385,9 @@ module ControlUnit(
             BRANCH: begin
                 if (branch_done) begin
                     state <= FETCH;
-                    branch_done <= 0;
+//                    branch_done <= 0;
                     branch_en <= 0;
+                    pc <= pc_out;
                 end
                 else begin
                     state <= BRANCH;

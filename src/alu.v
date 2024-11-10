@@ -101,8 +101,8 @@ module ALU(
                 end
             endcase
         end
-        // else begin
-        // alu_done <= 1'b0; // Modification 2: Added condition. Now, alu_done == 1 iff en = 1 and op is done! 
-        // end
+         else begin
+         alu_done <= 1'b0; // Modification 2: Added condition. Now, alu_done == 1 iff en = 1 and op is done! 
+         end
     end
 endmodule

@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 
 module JumpModule(
+    input clk,
     input en,
     input jump,
     input [31:0] pc,
@@ -14,18 +15,25 @@ module JumpModule(
     initial begin
         jump_done = 1'b0;
     end
+    
+//    assign pc_out = (jump & (path_index==4'd5 | path_index==4'd6))? pc_out <= {pc[31:26], addr} : (jump & path_index==4'd8)? pc_out <= reg_addr/4: pc;
 
-    always @ (posedge en) begin
-        if (jump & (path_index==4'd5 | path_index==4'd6)) begin
-            pc_out <= {pc[31:26], addr};
-        end
-        else if(jump & path_index==4'd8) begin
-            pc_out <= reg_addr/4;
+    always @ (posedge clk) begin
+        if (en) begin
+            if (jump & (path_index==4'd5 | path_index==4'd6)) begin
+                pc_out <= {pc[31:26], addr};
+            end
+            else if(jump & path_index==4'd8) begin
+                pc_out <= reg_addr/4;
+            end
+            else begin
+                pc_out <= pc;
+            end
+            jump_done <= 1'b1;
         end
         else begin
-            pc_out <= pc;
+            jump_done <= 1'b0;
         end
-        jump_done <= 1'b1;
     end
 
 endmodule

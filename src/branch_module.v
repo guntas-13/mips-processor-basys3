@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 
 module BranchModule(
+input clk,
 input en,
 input branch,
 input alu_zero,
@@ -13,9 +14,17 @@ output reg branch_done
 initial begin
     branch_done = 1'b0;
 end
-always @ (posedge en) begin
-    pc_out <= (branch & en & alu_zero)? pc + imm: pc;
-    branch_done <= 1'b1;
+
+//assign pc_out = (branch & en & alu_zero)? pc + imm: pc;
+
+always @ (posedge clk) begin
+    if (en) begin
+        pc_out <= (branch & en & alu_zero)? pc + imm: pc;
+        branch_done <= 1'b1;
+    end
+    else begin
+        branch_done <= 1'b0;
+    end
 end
 
 endmodule

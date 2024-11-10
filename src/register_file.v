@@ -17,9 +17,6 @@ module RegisterFile(
     integer i;
 
     initial begin
-        for (i = 0; i < 32; i = i + 1) begin
-            registers[i] = 32'd0;
-        end
         register_done = 1'b0;
     end
 
@@ -36,8 +33,8 @@ module RegisterFile(
 
             register_done <= 1'b1;
         end
-        // else begin
-        //     register_done <= 1'b0;
-        // end
+         else begin
+             register_done <= 1'b0;
+         end
     end
 endmodule
