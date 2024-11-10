@@ -39,7 +39,7 @@ module ALU(
         alu_done = 1'b0;
     end
 
-    always @(posedge clk) begin
+    always @(posedge (clk & en)) begin
         if (en) begin
             // alu_done <= 1'b0;
             overflow <= 1'b0;

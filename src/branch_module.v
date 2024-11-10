@@ -17,7 +17,7 @@ end
 
 //assign pc_out = (branch & en & alu_zero)? pc + imm: pc;
 
-always @ (posedge clk) begin
+always @ (posedge (clk & en)) begin
     if (en) begin
         pc_out <= (branch & en & alu_zero)? pc + imm: pc;
         branch_done <= 1'b1;
