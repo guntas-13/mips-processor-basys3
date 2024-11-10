@@ -1,12 +1,12 @@
 mem_words = 51200  # Total memory words
 
-with open("mips_machine_code.txt", "r") as mc_file:
+with open("./utils/mips_machine_code.txt", "r") as mc_file:
     machine_code_lines = [line.strip() for line in mc_file.readlines()]
 
 text_segment_size = len(machine_code_lines)  # Number of machine code instructions
 data_segment_start = 6300  # Start of data segment
 
-with open("data.coe", "w") as f:
+with open("./src/data.coe", "w") as f:
     f.write("memory_initialization_radix=2;\n")
     f.write("memory_initialization_vector=\n")
     

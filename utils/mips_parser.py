@@ -197,6 +197,6 @@ def assemble_mips(input_file, output_file):
     write_machine_code_to_file(machine_code, output_file)
 
 
-input_file = 'mips_instructions.txt'
-output_file = 'mips_machine_code.txt'
+input_file = './utils/mips_instructions.txt'
+output_file = './utils/mips_machine_code.txt'
 assemble_mips(input_file, output_file)
