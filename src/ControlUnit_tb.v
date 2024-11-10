@@ -34,7 +34,7 @@ initial begin
     top_en <= 0;
     #5;
     top_en <= 1;
-    #20
+    #25
     $finish();
 end
  

@@ -14,15 +14,17 @@ module RegisterFile(
 );
 
     reg [31:0] registers [0:31];
-    integer i;
-
+    
     initial begin
         register_done = 1'b0;
+        registers[0] <= 32'd0;
+        registers[29] <= 32'd51199;
+        registers[28] <= 32'd6300;
     end
 
-    always @(posedge clk) begin
+    always @(posedge (clk & en)) begin
         if (en) begin
-            register_done <= 1'b0;
+//            register_done <= 1'b0;
 
             read_data1 <= registers[read_reg1];
             read_data2 <= registers[read_reg2];

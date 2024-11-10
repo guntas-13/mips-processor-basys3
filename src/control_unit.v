@@ -14,7 +14,6 @@ module ControlUnit(
 );
 
     // Variables
-    reg [31:0] registers [0:31];
     reg [31:0] pc;
     reg [31:0] instr_reg;
     reg [3:0] state;
@@ -24,50 +23,55 @@ module ControlUnit(
     // Regfile
     reg reg_en;
     reg reg_write;
-    reg [4:0] read_reg1;
-    reg [4:0] read_reg2;
+//    reg [4:0] read_reg1;
+//    reg [4:0] read_reg2;
+    wire [4:0] rs;
+    wire [4:0] rt;
     wire [4:0] write_reg;
     wire [31:0] write_data;
     wire [31:0] read_data1;
     wire [31:0] read_data2;
-    wire register_done;
+    reg register_done;
+    wire register_done_wire;
 
     RegisterFile regs(
     .clk(clk),
     .en(reg_en),
     .reg_write(reg_write),
-    .read_reg1(read_reg1),
-    .read_reg2(read_reg2),
+    .read_reg1(rs),
+    .read_reg2(rt),
     .write_reg(write_reg),
     .write_data(write_data),
     .read_data1(read_data1),
     .read_data2(read_data2),
-    .register_done(register_done)
+    .register_done(register_done_wire)
     );
 
     // ALU
     reg alu_en;
-    reg [3:0] alu_control;
+//    reg [3:0] alu_control;
+    wire [3:0] ALU_Control; // this is the input [3:0] alu_control in the alu.v
     wire [31:0] alu_srcA;
     wire [31:0] alu_srcB;
     wire [31:0] alu_result;
     wire [31:0] hi;
     wire [31:0] lo;
     wire overflow;
-    wire alu_done;
+    reg alu_done;
+    wire alu_done_wire;
     wire alu_zero;
 
     ALU alu(
     .clk(clk),
     .en(alu_en),
-    .alu_control(alu_control),
+    .alu_control(ALU_Control),
     .alu_srcA(alu_srcA),          // this corresponds to $rs or shamt
     .alu_srcB(alu_srcB),          // this corresponds to $rt
     .alu_result(alu_result),   // this corresponds to $rd
     .hi(hi),
     .lo(lo),
     .overflow(overflow),
-    .alu_done(alu_done),
+    .alu_done(alu_done_wire),
     .alu_zero(alu_zero)
     );
 
@@ -97,12 +101,9 @@ module ControlUnit(
     wire MemRead; // this is the input ren in MemReadWrite.v
     wire MemWrite; // this is the input wen in MemReadWrite.v
     wire [1:0] MemtoReg; // this is the select line in the MUX for the data to be written to the register file from the read data from the memory or the ALU output
-    wire [3:0] ALU_Control; // this is the input [3:0] alu_control in the alu.v
     wire ALUSrc; // this is the select line in the MUX for the second operand of the ALU (either the immediate value or the value from the register file)
     wire RegWrite; // this is the input reg_write in the register_file.v
     wire [31:0] imm_extended; // this is the immediate value extended to 32 bits
-    wire [4:0] rs;
-    wire [4:0] rt;
     wire [4:0] rd;
     wire [4:0] shamt;
     wire [25:0] jump_address;
@@ -136,7 +137,8 @@ module ControlUnit(
 
     //Branch
     reg branch_en;
-    wire branch_done;
+    reg branch_done;
+    wire branch_done_wire;
 
     BranchModule branch(
     .clk(clk),
@@ -146,12 +148,13 @@ module ControlUnit(
     .imm(imm_extended),
     .pc(pc),
     .pc_out(pc_out),
-    .branch_done(branch_done)
+    .branch_done(branch_done_wire)
     );
 
     //Jump 
     reg jump_en;
-    wire jump_done;
+    reg jump_done;
+    wire jump_done_wire;
 
     JumpModule jump(
     .clk(clk),
@@ -162,7 +165,7 @@ module ControlUnit(
     .path_index(path_index),
     .reg_addr(read_data1),
     .pc_out(pc_out),
-    .jump_done(jump_done)
+    .jump_done(jump_done_wire)
     );
 
     // MUX
@@ -222,9 +225,6 @@ module ControlUnit(
     initial begin
         pc <= 32'd0;
         state <= IDLESRC;
-        registers[0] <= 32'd0;
-        registers[29] <= 32'd51199;
-        registers[28] <= 32'd6300;
     end
 
     always @ (posedge (clk & top_en))
@@ -291,14 +291,16 @@ module ControlUnit(
                     else begin //(path_index == 4'd7)
                         state <= JUMP;
                     end
-//                    register_done <= 0;
+                    register_done <= 0;
                     reg_en <= 0;
                 end
                 else begin
                     state <= REGFILE;
                     reg_en <= 1;
+                    reg_write <= 0;
                     ID <= 0;
                     REG <= 1;
+                    register_done <= register_done_wire;
 
                 end
             end
@@ -317,13 +319,14 @@ module ControlUnit(
                         state <= BRANCH;
                     end
                     alu_en <= 0;
-//                    alu_done <= 0;
+                    alu_done <= 0;
                 end
                 else begin
                     state <= EXECUTE;
                     alu_en <= 1;
                     EX <= 1;
                     REG <= 0;
+                    alu_done <= alu_done_wire;
                 end
             end
             MEMORY: begin
@@ -331,12 +334,14 @@ module ControlUnit(
                     state <= RED4;
                     mem_en <= 1;
                     mem_ren <= 1;
+                    mem_wen <= 0;
                     mem_addr <= alu_result[15:0];
                 end
                 else begin // (path_index == 4'd3)
                     state <= FETCH;
                     mem_en <= 1;
                     mem_wen <= 1;
+                    mem_ren <= 0;
                     mem_addr <= alu_result[15:0];
                     mem_din <= read_data2;
                 end
@@ -344,7 +349,7 @@ module ControlUnit(
                 EX <= 0;
             end
             RED4: begin
-                state <= RED4;
+                state <= RED5;
             end
             RED5: begin
                 state <= RED6;
@@ -360,23 +365,27 @@ module ControlUnit(
                     else begin // (path_index == 4'd0) | (path_index == 4'd1) | (path_index == 4'd2)
                         state <= FETCH;
                     end
-//                    register_done <= 0;
+                    register_done <= 0;
                     reg_en <= 0;
+                    reg_write <= 0;
                 end
                 else begin
                     state <= REGWRITE;
                     WB <= 1;
                     reg_en <= 1;
+                    reg_write <= 1;
                     mem_en <= 0;
                     mem_ren <= 0;
+                    mem_wen <= 0;
                     MEM <= 0;
                     REG <= 0;
+                    register_done <= register_done_wire;
                 end
             end
             JUMP: begin
                 if (jump_done) begin
                     state <= FETCH;
-//                    jump_done <= 0;
+                    jump_done <= 0;
                     jump_en <= 0;
                     pc <= pc_out;
                 end
@@ -387,12 +396,13 @@ module ControlUnit(
                     ID <= 0;
                     WB <= 0;
                     REG <= 0;
+                    jump_done <= jump_done_wire;
                 end
             end
             BRANCH: begin
                 if (branch_done) begin
                     state <= FETCH;
-//                    branch_done <= 0;
+                    branch_done <= 0;
                     branch_en <= 0;
                     pc <= pc_out;
                 end
@@ -401,6 +411,7 @@ module ControlUnit(
                     branch_en <= 1;
                     BR <= 1;
                     EX <= 0;
+                    branch_done <= branch_done_wire;
                 end
             end
         endcase    
