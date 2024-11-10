@@ -35,7 +35,7 @@ module decoder_control(
         decoder_done = 1'b0;
     end
 
-    always @(posedge clk) begin
+    always @(posedge (clk & en)) begin
         if (en) begin
 //            opcode <= instr[31:26];
 //            funct <= instr[5:0];
@@ -140,11 +140,10 @@ module decoder_control(
                     else begin
                         Jump <= 1'b0;
                     end
-                    
+                    decoder_done <= 1'b1;
 
                 end
                 6'b100010: begin // lw
-                    $display("Load Word");
                     RegDst <= 1'b0;
                     Jump <= 1'b0;
                     Branch <= 1'b0;
@@ -156,6 +155,7 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0010;
                     select_shamt <= 1'b0;
+                    decoder_done <= 1'b1;
                     
                 end
                 6'b101011: begin // sw
@@ -170,6 +170,7 @@ module decoder_control(
                     RegWrite <= 1'b0; // in the MemReadWrite.v, we have to send input [31:0] din as output reg [31:0] read_data2 in register_file.v
                     path_index <= 4'b0011;
                     select_shamt <= 1'b0;
+                    decoder_done <= 1'b1;
                     
                 end
                 6'b000100: begin // beq
@@ -184,6 +185,7 @@ module decoder_control(
                     RegWrite <= 1'b0;
                     path_index <= 4'b0100;
                     select_shamt <= 1'b0;
+                    decoder_done <= 1'b1;
                     
                 end
                 6'b001000: begin // addi
@@ -198,6 +200,7 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
+                    decoder_done <= 1'b1;
                     
                 end
                 6'b001010: begin // slti
@@ -212,6 +215,7 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
+                    decoder_done <= 1'b1;
                     
                 end
                 6'b001100: begin // andi
@@ -226,6 +230,7 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
+                    decoder_done <= 1'b1;
                     
                 end
                 6'b001101: begin // ori
@@ -240,7 +245,7 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0001; // This is handled in R Type's path itself
                     select_shamt <= 1'b0;
-                    
+                    decoder_done <= 1'b1;                    
                 end
                 // J-Type
                 6'b000010: begin // j
@@ -269,10 +274,10 @@ module decoder_control(
                     RegWrite <= 1'b1;
                     path_index <= 4'b0110;
                     select_shamt <= 1'b0;
+                    decoder_done <= 1'b1;
                     
                 end
             endcase
-            decoder_done <= 1'b1;
         end
         else begin
             decoder_done <= 1'b0;

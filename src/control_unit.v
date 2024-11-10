@@ -5,6 +5,7 @@ module ControlUnit(
     input top_en,
     output reg ID,
     output reg IF,
+    output reg REG,
     output reg EX,
     output reg MEM,
     output reg WB,
@@ -105,7 +106,8 @@ module ControlUnit(
     wire [4:0] rd;
     wire [4:0] shamt;
     wire [25:0] jump_address;
-    wire decoder_done;
+    reg decoder_done;
+    wire decoder_done_wire;
     wire select_shamt;
 
     decoder_control decoder(
@@ -128,7 +130,7 @@ module ControlUnit(
     .shamt(shamt),
     .jump_address(jump_address),
     .path_index(path_index),
-    .decoder_done(decoder_done),
+    .decoder_done(decoder_done_wire),
     .select_shamt(select_shamt)
     );
 
@@ -225,7 +227,7 @@ module ControlUnit(
         registers[28] <= 32'd6300;
     end
 
-    always @ (posedge clk)
+    always @ (posedge (clk & top_en))
     begin
         case(state)
             IDLESRC: begin
@@ -264,7 +266,7 @@ module ControlUnit(
                         state <= JUMP;
                     end
                     else state <= REGFILE;
-//                    decoder_done <= 0;
+                    decoder_done <= 0;
                     decoder_en <= 0;
                     pc <= pc + 1;
                 end
@@ -275,6 +277,7 @@ module ControlUnit(
                     IF <= 0;
                     mem_en <= 0;
                     mem_ren <= 0;
+                    decoder_done <= decoder_done_wire;
                 end
             end
             REGFILE: begin
@@ -295,6 +298,7 @@ module ControlUnit(
                     state <= REGFILE;
                     reg_en <= 1;
                     ID <= 0;
+                    REG <= 1;
 
                 end
             end
@@ -319,6 +323,7 @@ module ControlUnit(
                     state <= EXECUTE;
                     alu_en <= 1;
                     EX <= 1;
+                    REG <= 0;
                 end
             end
             MEMORY: begin
@@ -365,6 +370,7 @@ module ControlUnit(
                     mem_en <= 0;
                     mem_ren <= 0;
                     MEM <= 0;
+                    REG <= 0;
                 end
             end
             JUMP: begin
@@ -380,6 +386,7 @@ module ControlUnit(
                     JU <= 1;
                     ID <= 0;
                     WB <= 0;
+                    REG <= 0;
                 end
             end
             BRANCH: begin

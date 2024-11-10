@@ -5,6 +5,7 @@ reg clk;
 reg top_en;
 wire ID;
 wire IF;
+wire REG;
 wire EX;
 wire MEM;
 wire WB;
@@ -21,6 +22,7 @@ ControlUnit uut(
 .top_en(top_en),
 .ID(ID),
 .IF(IF),
+.REG(REG),
 .EX(EX),
 .MEM(MEM),
 .WB(WB),
