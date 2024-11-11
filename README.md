@@ -43,3 +43,8 @@
 <div align = "center">
     <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/mips_v1/media/factorial_waveform.png" style="width: 100%">
 </div>
+
+## Code with all instructions
+<div align = "center">
+    <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/mips_v1/media/mips_v1_all_inst.png" style="width: 100%">
+</div>
