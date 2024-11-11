@@ -14,7 +14,7 @@ module ControlUnit(
     output reg JU,
     output reg BR,
     output reg SK,
-    output infer_data
+    output [31:0] infer_data
 );
 
     // Variables
