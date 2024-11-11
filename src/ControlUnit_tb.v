@@ -14,7 +14,7 @@ wire WB;
 wire JU;
 wire BR;
 wire SK;
-wire infer_data;
+wire [31:0] infer_data;
 
 initial begin
     clk <= 1;
@@ -43,9 +43,11 @@ initial begin
     infer <= 0;
     #5;
     top_en <= 1;
-    #990;
+    #175;
     infer <= 1;
-    infer_addr <= 32'd6301;
+    infer_addr <= 32'd6302;
+    #10;
+    infer_addr <= 32'd6303;
     #10;
     $finish();
 end
