@@ -129,7 +129,7 @@ def parse_instruction(line, labels, current_address):
                 bin_instruction = f"{opcode_bin}{rs}{rt}{imm}"
             
             elif opcode == 'sysend':
-                bin_instruction = '11111000000000000000000000000000'
+                bin_instruction = '111111000000000000000000000000000'
 
             elif opcode in {"j", "jal"}:
                 # J-Type Jump Instruction, expecting format: `j label` or `jal label`
