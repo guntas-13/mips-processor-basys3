@@ -25,9 +25,9 @@ with open("./src/data.coe", "w") as f:
             f.write("00000000000000000000000000000000,\n")
         elif i == data_segment_start:
             # Begin the data segment at the specified start index (e.g., 6300)
-            f.write("00000000000000000000000000000011,\n")
-        # elif i == data_segment_start + 1:
-        #     f.write("00000000000000000000000000000100,\n")
+            f.write("00000000000000000000000000001010,\n")
+        elif i == data_segment_start + 1:
+            f.write("00000000000000000000000000000101,\n")
         elif i < mem_words - 1:
             # Continue filling with zeros in the remaining memory
             f.write("00000000000000000000000000000000,\n")
