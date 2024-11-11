@@ -18,7 +18,7 @@ wire infer_data;
 
 initial begin
     clk <= 1;
-    forever #0.5 clk = ~clk;
+    forever #1 clk = ~clk;
 end
 
 ControlUnit uut(
@@ -43,10 +43,7 @@ initial begin
     infer <= 0;
     #5;
     top_en <= 1;
-    #50;
-    infer <= 1;
-    infer_addr <= 15'd6301;
-    #10;
+    #150;
     $finish();
 end
  

@@ -21,7 +21,6 @@ module ControlUnit(
     reg [31:0] pc;
     reg [31:0] instr_reg;
     reg [3:0] state;
-    wire [31:0] pc_out;
     wire [3:0] path_index;
 
     // Regfile
@@ -145,6 +144,7 @@ module ControlUnit(
     reg branch_en;
     reg branch_done;
     wire branch_done_wire;
+    wire [31:0] pc_out_b;
 
     BranchModule branch(
     .clk(clk),
@@ -153,7 +153,7 @@ module ControlUnit(
     .alu_zero(alu_zero),
     .imm(imm_extended),
     .pc(pc),
-    .pc_out(pc_out),
+    .pc_out(pc_out_b),
     .branch_done(branch_done_wire)
     );
 
@@ -161,7 +161,8 @@ module ControlUnit(
     reg jump_en;
     reg jump_done;
     wire jump_done_wire;
-
+    wire [31:0] pc_out_j;
+    
     JumpModule jump(
     .clk(clk),
     .en(jump_en),
@@ -170,7 +171,7 @@ module ControlUnit(
     .addr(jump_address),
     .path_index(path_index),
     .reg_addr(read_data1),
-    .pc_out(pc_out),
+    .pc_out(pc_out_j),
     .jump_done(jump_done_wire)
     );
 
@@ -396,7 +397,7 @@ module ControlUnit(
                     state <= FETCH;
                     jump_done <= 0;
                     jump_en <= 0;
-                    pc <= pc_out;
+                    pc <= pc_out_j;
                 end
                 else begin
                     state <= JUMP;
@@ -413,7 +414,7 @@ module ControlUnit(
                     state <= FETCH;
                     branch_done <= 0;
                     branch_en <= 0;
-                    pc <= pc_out;
+                    pc <= pc_out_b;
                 end
                 else begin
                     state <= BRANCH;

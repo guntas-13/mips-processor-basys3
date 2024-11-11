@@ -11,20 +11,20 @@ module JumpModule(
     output reg [31:0] pc_out,
     output reg jump_done
 );
-
+    
     initial begin
         jump_done = 1'b0;
+        pc_out <= 32'd0;
     end
     
-//    assign pc_out = (jump & (path_index==4'd5 | path_index==4'd6))? pc_out <= {pc[31:26], addr} : (jump & path_index==4'd8)? pc_out <= reg_addr/4: pc;
+//    assign pc_o = (jump & (path_index==4'd5 | path_index==4'd6) & en)? {pc[31:26], addr} : (jump & path_index==4'd8 & en)? reg_addr: pc;
 
     always @ (posedge (clk & en)) begin
         if (en) begin
-            if (jump & (path_index==4'd5 | path_index==4'd6)) begin
+            if ((path_index==4'd5 | path_index==4'd6)) begin
                 pc_out <= {pc[31:26], addr};
-                $display(pc_out);
             end
-            else if(jump & path_index==4'd8) begin
+            else if(path_index==4'd8) begin
                 pc_out <= reg_addr;
             end
             else begin

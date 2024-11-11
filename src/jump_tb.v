@@ -38,7 +38,7 @@ initial begin
     reg_addr <= 32'd4;
     #5;
     en <= 1;
-    #20;
+    #10;
     $finish();
 end
 
