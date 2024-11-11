@@ -102,6 +102,23 @@ def parse_instruction(line, labels, current_address):
                 rs = REGISTERS[parts[2]]
                 imm = decimal_to_binary(int(parts[3]), 16)
                 bin_instruction = f"{opcode_bin}{rs}{rt}{imm}"
+            
+            # mult and div are mult $rs, $rt and div $rs, $rt
+            elif opcode in {"mult", "div"}:
+                # R-Type Instruction, expecting format: `opcode rs, rt`
+                if len(parts) < 3:
+                    raise ValueError(f"Instruction '{line}' is missing operands")
+                rs = REGISTERS[parts[1]]
+                rt = REGISTERS[parts[2]]
+                bin_instruction = f"{opcode_bin}{rs}{rt}0000000000{FUNCTS[opcode]}"
+            
+            # mflo and mfhi are mflo $rd and mfhi $rd
+            elif opcode in {"mflo", "mfhi"}:
+                # R-Type Instruction, expecting format: `opcode rd`
+                if len(parts) < 2:
+                    raise ValueError(f"Instruction '{line}' is missing operands")
+                rd = REGISTERS[parts[1]]
+                bin_instruction = f"{opcode_bin}0000000000{rd}000000{FUNCTS[opcode]}"
 
             elif opcode in {"lw", "sw"}:
                 # I-Type Memory Access Instruction, expecting format: `opcode rt, offset(base)`

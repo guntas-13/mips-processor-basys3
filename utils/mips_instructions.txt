@@ -1,7 +1,20 @@
 main: lw $a0, 0($gp)
-lw $a1, 1($gp)
-jal add_two_numbers
-sw $v0, 2($gp)
+jal fact
+sw $v0, 1($gp)
 sysend
-add_two_numbers: add $v0, $a0, $a1
+fact: addi $sp, $sp, -8
+sw $ra, 4($sp)
+sw $a0, 0($sp)
+slti $t0, $a0, 1
+beq $t0, $zero, L1
+addi $v0, $zero, 1
+addi $sp, $sp, 8
+jr $ra
+L1: addi $a0, $a0, -1
+jal fact
+lw $a0, 0($sp)
+lw $ra, 4($sp)
+addi $sp, $sp, 8
+mult $a0, $v0
+mflo $v0
 jr $ra
