@@ -43,11 +43,9 @@ initial begin
     infer <= 0;
     #5;
     top_en <= 1;
-    #200;
+    #990;
     infer <= 1;
     infer_addr <= 32'd6301;
-    #10;
-    infer_addr <= 32'd6302;
     #10;
     $finish();
 end
