@@ -40,9 +40,10 @@ ControlUnit uut(
 
 initial begin
     top_en <= 0;
+    infer <= 0;
     #5;
     top_en <= 1;
-    #40;
+    #50;
     infer <= 1;
     infer_addr <= 15'd6301;
     #10;

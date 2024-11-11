@@ -267,7 +267,7 @@ module ControlUnit(
             end
             DECODE: begin
                 if(decoder_done) begin
-                    if (path_index == 4'd0) begin
+                    if ((path_index == 4'd0)|(path_index == 4'd6))begin
                         state <= REGWRITE;
                     end
                     else if (path_index == 4'd5) begin
@@ -295,9 +295,6 @@ module ControlUnit(
                 if(register_done) begin
                     if ((path_index == 4'd1) | (path_index == 4'd2) | (path_index == 4'd3) | (path_index == 4'd4) | (path_index == 4'd8)) begin
                         state <= EXECUTE;
-                    end
-                    else if (path_index == 4'd6) begin
-                        state <= REGWRITE;
                     end
                     else begin //(path_index == 4'd7)
                         state <= JUMP;
@@ -383,6 +380,7 @@ module ControlUnit(
                 else begin
                     state <= REGWRITE;
                     WB <= 1;
+                    ID <= 0;
                     reg_en <= 1;
                     reg_write <= 1;
                     mem_en <= 0;

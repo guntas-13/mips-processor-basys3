@@ -22,6 +22,7 @@ module JumpModule(
         if (en) begin
             if (jump & (path_index==4'd5 | path_index==4'd6)) begin
                 pc_out <= {pc[31:26], addr};
+                $display(pc_out);
             end
             else if(jump & path_index==4'd8) begin
                 pc_out <= reg_addr;
