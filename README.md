@@ -45,6 +45,22 @@
 </div>
 
 ## Code with all instructions
+### Code
+```
+lw $s0, 0($gp)
+lw $s1, 1($gp)
+add $t0, $s0, $s1
+beq $t0, $s0, exit
+j next
+next: div $s0, $s1
+mflo $t1
+sw $t0, 2($gp)
+sw $t1, 3($gp)
+jal exit
+sysend
+exit: jr $ra
+```
+### Simulation
 <div align = "center">
     <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/mips_v1/media/mips_v1_all_inst.png" style="width: 100%">
 </div>
