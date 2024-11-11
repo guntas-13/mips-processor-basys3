@@ -4,7 +4,7 @@ module ControlUnit_tb();
 reg clk;
 reg top_en;
 reg infer;
-reg [15:0] infer_addr;
+reg [9:0] infer_addr;
 wire ID;
 wire IF;
 wire REG;
@@ -14,7 +14,6 @@ wire WB;
 wire JU;
 wire BR;
 wire SK;
-wire infer_data;
 
 initial begin
     clk <= 1;
@@ -22,7 +21,7 @@ initial begin
 end
 
 ControlUnit uut(
-.clk(clk),
+.fast_clk(clk),
 .top_en(top_en),
 .infer(infer),
 .infer_addr(infer_addr),
@@ -34,8 +33,7 @@ ControlUnit uut(
 .WB(WB),
 .JU(JU),
 .BR(BR),
-.SK(SK),
-.infer_data(infer_data)
+.SK(SK)
 );
 
 initial begin
@@ -45,7 +43,7 @@ initial begin
     top_en <= 1;
     #990;
     infer <= 1;
-    infer_addr <= 32'd6301;
+    infer_addr <= 1;
     #10;
     $finish();
 end

@@ -1,10 +1,10 @@
 `timescale 1ns / 1ps
 
 module ControlUnit(
-    input clk,
+    input fast_clk,
     input top_en,
     input infer,
-    input [15:0] infer_addr,
+    input [9:0] infer_addr,
     output reg ID,
     output reg IF,
     output reg REG,
@@ -14,14 +14,17 @@ module ControlUnit(
     output reg JU,
     output reg BR,
     output reg SK,
-    output infer_data
+    output [6:0] LED_out,
+    output [3:0] Anode_Activate
 );
-
+    
     // Variables
     reg [31:0] pc;
     reg [31:0] instr_reg;
     reg [3:0] state;
     wire [3:0] path_index;
+    reg [24:0] counter;
+    reg clk;
 
     // Regfile
     reg reg_en;
@@ -210,6 +213,17 @@ module ControlUnit(
     .SEL2_Jump(Jump),            // For jal instruction need PC + 4 to be written to register file
     .mux_out(write_data)
     );
+    
+    wire [15:0] infer_data;
+    assign infer_data = (infer)? mem_dout[15:0]: 16'd0;
+    
+    seven_seg_display seven_seg(
+    .clock_100Mhz(fast_clk),
+    .reset(0),
+    .displayed_number(infer_data),
+    .Anode_Activate(Anode_Activate),
+    .LED_out(LED_out)
+    );
 
     // STATES
     parameter IDLESRC = 4'b0000;
@@ -232,10 +246,20 @@ module ControlUnit(
     initial begin
         pc <= 32'd0;
         state <= IDLESRC;
+        counter <= 4'd0;
+        clk <= 1'd1;
     end
     
-    assign infer_data = mem_dout;
-
+    always @ (posedge fast_clk) begin
+        if (counter == 25'd1250000) begin
+            counter <= 0;
+            clk <= ~clk;
+        end
+        else begin
+            counter <= counter + 1;
+        end        
+    end
+    
     always @ (posedge (clk & top_en))
     begin
         case(state)
@@ -255,6 +279,7 @@ module ControlUnit(
                 WB <= 0;
                 JU <= 0;
                 BR <= 0;
+                SK <= 0;
             end
             RED1: begin
                 state <= RED2;
@@ -430,7 +455,7 @@ module ControlUnit(
                     mem_en <= 1;
                     mem_ren <= 1;
                     mem_wen <= 0;
-                    mem_addr <= infer_addr;
+                    mem_addr <= infer_addr + 6300;
                 end
                 state <= SINK;
                 ID <= 0;
