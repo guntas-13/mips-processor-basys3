@@ -424,7 +424,7 @@ module ControlUnit(
                     mem_en <= 1;
                     mem_ren <= 1;
                     mem_wen <= 0;
-                    mem_addr <= infer_addr;
+                    mem_addr <= infer_addr + 6300;
                 end
                 state <= SINK;
                 ID <= 0;
