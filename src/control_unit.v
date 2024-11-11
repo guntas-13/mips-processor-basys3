@@ -294,10 +294,10 @@ module ControlUnit(
             end
             REGFILE: begin
                 if(register_done) begin
-                    if ((path_index == 4'd1) | (path_index == 4'd2) | (path_index == 4'd3) | (path_index == 4'd4) | (path_index == 4'd8)) begin
+                    if ((path_index == 4'd1) | (path_index == 4'd2) | (path_index == 4'd3) | (path_index == 4'd4) | (path_index == 4'd7)) begin
                         state <= EXECUTE;
                     end
-                    else begin //(path_index == 4'd7)
+                    else begin //path_index == 4'd8
                         state <= JUMP;
                     end
                     register_done <= 0;
@@ -321,7 +321,7 @@ module ControlUnit(
                     else if ((path_index == 4'd2) | (path_index == 4'd3)) begin
                         state <= MEMORY;
                     end
-                    else if (path_index == 4'd8) begin
+                    else if (path_index == 4'd7) begin
                         state <= FETCH;
                     end
                     else begin // (path_index == 4'd4)
@@ -382,6 +382,7 @@ module ControlUnit(
                     state <= REGWRITE;
                     WB <= 1;
                     ID <= 0;
+                    EX <= 0;
                     reg_en <= 1;
                     reg_write <= 1;
                     mem_en <= 0;
