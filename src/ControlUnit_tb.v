@@ -18,7 +18,7 @@ wire infer_data;
 
 initial begin
     clk <= 1;
-    forever #1 clk = ~clk;
+    forever #0.5 clk = ~clk;
 end
 
 ControlUnit uut(
