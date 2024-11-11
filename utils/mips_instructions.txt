@@ -15,10 +15,6 @@ jal fact
 lw $a0, 0($sp)
 lw $ra, 4($sp)
 addi $sp, $sp, 8
-<<<<<<< HEAD
 mult $a0, $v0
 mflo $v0
-=======
-mult $v0, $a0, $v0
->>>>>>> 91cb132fffe27ee86a303921ea927d37e6ab156d
 jr $ra

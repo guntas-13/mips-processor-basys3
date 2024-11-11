@@ -10,7 +10,7 @@ OPCODES = {
 FUNCTS = {
     "add": "100000", "sub": "100010", "and": "100100", "or": "100101",
     "nor": "100111", "slt": "101010", "sll": "000000", "srl": "000010",
-    "mult": "011000", "div": "011010", "mfhi": "010000", "mflo": "010010",
+    "mult": "011000", "div": "011010", "mflo": "010000", "mfhi": "010010",
     "jr": "001000"
 }
 
@@ -118,7 +118,7 @@ def parse_instruction(line, labels, current_address):
                 if len(parts) < 2:
                     raise ValueError(f"Instruction '{line}' is missing operands")
                 rd = REGISTERS[parts[1]]
-                bin_instruction = f"{opcode_bin}0000000000{rd}000000{FUNCTS[opcode]}"
+                bin_instruction = f"{opcode_bin}0000000000{rd}00000{FUNCTS[opcode]}"
 
             elif opcode in {"lw", "sw"}:
                 # I-Type Memory Access Instruction, expecting format: `opcode rt, offset(base)`
