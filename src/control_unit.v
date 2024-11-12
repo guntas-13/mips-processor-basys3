@@ -5,6 +5,7 @@ module ControlUnit(
     input top_en,
     input infer,
     input [9:0] infer_addr,
+    output [31:0] infer_data,
     output reg ID,
     output reg IF,
     output reg REG,
@@ -29,19 +30,14 @@ module ControlUnit(
     // Regfile
     reg reg_en;
     reg reg_write;
-//    reg [4:0] read_reg1;
-//    reg [4:0] read_reg2;
     wire [4:0] rs;
     wire [4:0] rt;
     wire [4:0] write_reg;
     wire [31:0] write_data;
     wire [31:0] read_data1;
     wire [31:0] read_data2;
-    reg register_done;
-    wire register_done_wire;
 
     RegisterFile regs(
-    .clk(clk),
     .en(reg_en),
     .reg_write(reg_write),
     .read_reg1(rs),
@@ -49,13 +45,11 @@ module ControlUnit(
     .write_reg(write_reg),
     .write_data(write_data),
     .read_data1(read_data1),
-    .read_data2(read_data2),
-    .register_done(register_done_wire)
+    .read_data2(read_data2)
     );
 
     // ALU
     reg alu_en;
-//    reg [3:0] alu_control;
     wire [3:0] ALU_Control; // this is the input [3:0] alu_control in the alu.v
     wire [31:0] alu_srcA;
     wire [31:0] alu_srcB;
@@ -63,12 +57,10 @@ module ControlUnit(
     wire [31:0] hi;
     wire [31:0] lo;
     wire overflow;
-    reg alu_done;
-    wire alu_done_wire;
     wire alu_zero;
+    
 
     ALU alu(
-    .clk(clk),
     .en(alu_en),
     .alu_control(ALU_Control),
     .alu_srcA(alu_srcA),          // this corresponds to $rs or shamt
@@ -77,7 +69,6 @@ module ControlUnit(
     .hi(hi),
     .lo(lo),
     .overflow(overflow),
-    .alu_done(alu_done_wire),
     .alu_zero(alu_zero)
     );
 
@@ -104,33 +95,23 @@ module ControlUnit(
     wire RegDst; // will go as select line in the MUX for instr[20:16] (rt) or instr[15:11] (rd)
     wire Jump;
     wire Branch;
-    wire MemRead; // this is the input ren in MemReadWrite.v
-    wire MemWrite; // this is the input wen in MemReadWrite.v
     wire [1:0] MemtoReg; // this is the select line in the MUX for the data to be written to the register file from the read data from the memory or the ALU output
     wire ALUSrc; // this is the select line in the MUX for the second operand of the ALU (either the immediate value or the value from the register file)
-    wire RegWrite; // this is the input reg_write in the register_file.v
     wire [31:0] imm_extended; // this is the immediate value extended to 32 bits
     wire [4:0] rd;
     wire [4:0] shamt;
     wire [25:0] jump_address;
-    reg decoder_done;
-    wire decoder_done_wire;
     wire select_shamt;
-//    wire exit_instruction;
 
     decoder_control decoder(
-    .clk(clk),
     .en(decoder_en),
     .instr(instr_reg),
     .RegDst(RegDst),
     .Jump(Jump),
     .Branch(Branch),
-    .MemRead(MemRead),
     .MemtoReg(MemtoReg),
     .ALU_Control(ALU_Control),
-    .MemWrite(MemWrite),
     .ALUSrc(ALUSrc),
-    .RegWrite(RegWrite),
     .imm_extended(imm_extended),
     .rs(rs),
     .rt(rt),
@@ -138,44 +119,32 @@ module ControlUnit(
     .shamt(shamt),
     .jump_address(jump_address),
     .path_index(path_index),
-    .decoder_done(decoder_done_wire),
     .select_shamt(select_shamt)
-//    .exit_instruction(exit_instruction)
     );
 
     //Branch
     reg branch_en;
-    reg branch_done;
-    wire branch_done_wire;
     wire [31:0] pc_out_b;
 
     BranchModule branch(
-    .clk(clk),
     .en(branch_en),
-    .branch(Branch),
     .alu_zero(alu_zero),
     .imm(imm_extended),
     .pc(pc),
-    .pc_out(pc_out_b),
-    .branch_done(branch_done_wire)
+    .pc_out(pc_out_b)
     );
 
     //Jump 
     reg jump_en;
-    reg jump_done;
-    wire jump_done_wire;
     wire [31:0] pc_out_j;
     
     JumpModule jump(
-    .clk(clk),
     .en(jump_en),
-    .jump(Jump),
     .pc(pc),
     .addr(jump_address),
     .path_index(path_index),
     .reg_addr(read_data1),
-    .pc_out(pc_out_j),
-    .jump_done(jump_done_wire)
+    .pc_out(pc_out_j)
     );
 
     // MUX
@@ -214,7 +183,7 @@ module ControlUnit(
     .mux_out(write_data)
     );
     
-    wire [15:0] infer_data;
+//    wire [15:0] infer_data;
     assign infer_data = (infer)? mem_dout[15:0]: 16'd0;
     
     seven_seg_display seven_seg(
@@ -251,7 +220,7 @@ module ControlUnit(
     end
     
     always @ (posedge fast_clk) begin
-        if (counter == 25'd1250000) begin
+        if (counter == 25'd1) begin
             counter <= 0;
             clk <= ~clk;
         end
@@ -265,20 +234,41 @@ module ControlUnit(
             IDLESRC: begin
                 if (top_en) state <= FETCH;
                 else state <= IDLESRC;
-            end
-            FETCH: begin
-                state <= RED1;
-                mem_en <= 1;
-                mem_ren <= 1;
-                mem_wen <= 0;
-                mem_addr <= pc[15:0];
-                IF <= 1;
+                IF <= 0;
+                ID <= 0;
+                REG <= 0;
                 EX <= 0;
                 MEM <= 0;
                 WB <= 0;
                 JU <= 0;
                 BR <= 0;
                 SK <= 0;
+            end
+            FETCH: begin
+                if (pc == 32'd0) begin
+                    mem_addr <= pc[15:0];
+                end
+                else begin
+                    mem_addr <= (Jump)? pc_out_j[15:0]: (Branch)? pc_out_b[15:0]: pc[15:0];
+                end
+                state <= RED1;
+                mem_en <= 1;
+                mem_ren <= 1;
+                mem_wen <= 0;
+                IF <= 1;
+                ID <= 0;
+                REG <= 0;
+                EX <= 0;
+                MEM <= 0;
+                WB <= 0;
+                JU <= 0;
+                BR <= 0;
+                SK <= 0;
+                reg_en <= 0;
+                reg_write <= 0;
+                branch_en <= 0;
+                jump_en <= 0;
+                alu_en <= 0;
             end
             RED1: begin
                 state <= RED2;
@@ -289,31 +279,25 @@ module ControlUnit(
             RED3: begin
                 state <= DECODE;
                 instr_reg <= mem_dout;
+                pc <= pc + 1;
+                ID <= 1;
+                IF <= 0;
+                decoder_en <= 1;
             end
             DECODE: begin
-                    if ((path_index == 4'd0)|(path_index == 4'd6))begin
-                        state <= REGWRITE;
-                    end
-                    else if (path_index == 4'd5) begin
-                        state <= JUMP;
-                    end
-                    else if (path_index == 4'd9) begin
-                        state <= SINK;
-                    end
-                    else state <= REGFILE;
-                    pc <= pc + 1;
-                    ID <= 1;
-                    IF <= 0;
-                    
-                    mem_en <= 0;
-                    mem_ren <= 0;
-                    mem_wen <= 0;
-                    decoder_en <= 1;
-                    reg_en <= 0;
-                    alu_en <= 0;
-                    jump_en <= 0;
-                    branch_en <= 0;
-                    reg_write <= 0;
+                if ((path_index == 4'd0)|(path_index == 4'd6))begin
+                    state <= REGWRITE;
+                end
+                else if (path_index == 4'd5) begin
+                    state <= JUMP;
+                end
+                else if (path_index == 4'd9) begin
+                    state <= SINK;
+                end 
+                else state <= REGFILE; // many instructions
+                mem_en <= 0;
+                mem_ren <= 0;
+                mem_wen <= 0;
 
             end
             REGFILE: begin
@@ -323,22 +307,11 @@ module ControlUnit(
                     else begin //path_index == 4'd8
                         state <= JUMP;
                     end
-                    
-//                    reg_en <= 1;
-                    mem_en <= 0;
-                    mem_ren <= 0;
-                    mem_wen <= 0;
                     decoder_en <= 0;
                     reg_en <= 1;
-                    alu_en <= 0;
-                    jump_en <= 0;
-                    branch_en <= 0;
-                    reg_write <= 0;
-                    
                     reg_write <= 0;
                     ID <= 0;
                     REG <= 1;
-//                    register_done <= register_done_wire;
             end
             EXECUTE: begin
                     if (path_index == 4'd1) begin
@@ -353,22 +326,10 @@ module ControlUnit(
                     else begin // (path_index == 4'd4)
                         state <= BRANCH;
                     end
-                    
-//                    alu_done <= 0;
-//                    alu_en <= 1;
-                    mem_en <= 0;
-                    mem_ren <= 0;
-                    mem_wen <= 0;
-                    decoder_en <= 0;
                     reg_en <= 0;
                     alu_en <= 1;
-                    jump_en <= 0;
-                    branch_en <= 0;
-                    reg_write <= 0;
-                    
                     EX <= 1;
                     REG <= 0;
-                    alu_done <= alu_done_wire;
             end
             MEMORY: begin
                 if (path_index == 4'd2) begin
@@ -386,6 +347,8 @@ module ControlUnit(
                     mem_addr <= alu_result[15:0];
                     mem_din <= read_data2;
                 end
+                
+                alu_en <= 0;
                 MEM <= 1;
                 EX <= 0;
             end
@@ -393,84 +356,47 @@ module ControlUnit(
                 state <= RED5;
             end
             RED5: begin
-                state <= RED6;
-            end
-            RED6: begin
                 state <= REGWRITE;
             end
             REGWRITE: begin
-                    if (path_index == 4'd6) begin
-                        state <= JUMP;
-                    end
-                    else begin // (path_index == 4'd0) | (path_index == 4'd1) | (path_index == 4'd2)
-                        state <= FETCH;
-                    end
-                    register_done <= 0;
-//                    reg_en <= 0;
-                    reg_write <= 0;
-                    WB <= 1;
-                    ID <= 0;
-                    EX <= 0;
-//                    reg_en <= 1;
-                    mem_en <= 0;
-                    mem_ren <= 0;
-                    mem_wen <= 0;
-                    decoder_en <= 0;
-                    reg_en <= 1;
-                    alu_en <= 0;
-                    jump_en <= 0;
-                    branch_en <= 0;
-                    
-                    reg_write <= 1;
-//                    mem_en <= 0;
-//                    mem_ren <= 0;
-//                    mem_wen <= 0;
-                    MEM <= 0;
-                    REG <= 0;
-                    register_done <= register_done_wire;
+                if (path_index == 4'd6) begin
+                    state <= JUMP;
+                end
+                else begin // (path_index == 4'd0) | (path_index == 4'd1) | (path_index == 4'd2)
+                    state <= FETCH;
+                end
+                WB <= 1;
+                ID <= 0;
+                EX <= 0;
+                MEM <= 0;
+                mem_en <= 0;
+                mem_ren <= 0;
+                mem_wen <= 0;
+                decoder_en <= 0;
+                alu_en <= 0;
+                reg_en <= 1;
+                reg_write <= 1;
             end
             JUMP: begin
-                    state <= FETCH;
-//                    jump_done <= 0;
-//                    jump_en <= 0;
-                    mem_en <= 0;
-                    mem_ren <= 0;
-                    mem_wen <= 0;
-                    decoder_en <= 0;
-                    reg_en <= 0;
-                    alu_en <= 0;
-                    jump_en <= 1;
-                    branch_en <= 0;
-                    reg_write <= 0;
-
-
-                    pc <= pc_out_j;
-//                    jump_en <= 1;
-                    JU <= 1;
-                    ID <= 0;
-                    WB <= 0;
-                    REG <= 0;
-//                    jump_done <= jump_done_wire;
+                state <= FETCH;
+                JU <= 1;
+                WB <= 0;
+                ID <= 0;
+                REG <= 0;
+                mem_en <= 0;
+                mem_ren <= 0;
+                mem_wen <= 0;
+                decoder_en <= 0;
+                reg_en <= 0;
+                reg_write <= 0;
+                jump_en <= 1;
             end
             BRANCH: begin
-                    state <= FETCH;
-//                    branch_done <= 0;
-//                    branch_en <= 0;
-                    mem_en <= 0;
-                    mem_ren <= 0;
-                    mem_wen <= 0;
-                    decoder_en <= 0;
-                    reg_en <= 0;
-                    alu_en <= 0;
-                    jump_en <= 0;
-                    branch_en <= 1;
-                    reg_write <= 0;
-                    
-                    pc <= pc_out_b;
-//                    branch_en <= 1;
-                    BR <= 1;
-                    EX <= 0;
-                    branch_done <= branch_done_wire;
+                state <= FETCH;
+                alu_en <= 0;
+                branch_en <= 1;
+                BR <= 1;
+                EX <= 0;
             end
             SINK: begin
                 if (infer) begin
