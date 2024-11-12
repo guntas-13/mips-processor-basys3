@@ -5,7 +5,7 @@ module ControlUnit(
     input top_en,
     input infer,
     input [9:0] infer_addr,
-    output [31:0] infer_data,
+//    output [31:0] infer_data,
     output reg ID,
     output reg IF,
     output reg REG,
@@ -183,7 +183,7 @@ module ControlUnit(
     .mux_out(write_data)
     );
     
-//    wire [15:0] infer_data;
+    wire [15:0] infer_data;
     assign infer_data = (infer)? mem_dout[15:0]: 16'd0;
     
     seven_seg_display seven_seg(
@@ -199,18 +199,17 @@ module ControlUnit(
     parameter FETCH = 4'b0001;
     parameter RED1 = 4'b0010;
     parameter RED2 = 4'b0011;
-    parameter RED3 = 4'b0100;
-    parameter DECODE  = 4'b0101;
+    parameter DECODE = 4'b0100;
+    parameter RED3  = 4'b0101;
     parameter REGFILE  = 4'b0110;
     parameter EXECUTE  = 4'b0111;
     parameter MEMORY  = 4'b1000;
     parameter RED4 = 4'b1001;
     parameter RED5 = 4'b1010;
-    parameter RED6 = 4'b1011;
-    parameter REGWRITE  = 4'b1100;
-    parameter JUMP = 4'b1101;
-    parameter BRANCH = 4'b1110;
-    parameter SINK = 4'b1111; 
+    parameter REGWRITE  = 4'b1011;
+    parameter JUMP = 4'b1100;
+    parameter BRANCH = 4'b1101;
+    parameter SINK = 4'b1110; 
 
     initial begin
         pc <= 32'd0;
@@ -220,7 +219,7 @@ module ControlUnit(
     end
     
     always @ (posedge fast_clk) begin
-        if (counter == 25'd1) begin
+        if (counter == 25'd1000000) begin
             counter <= 0;
             clk <= ~clk;
         end
@@ -246,10 +245,11 @@ module ControlUnit(
             end
             FETCH: begin
                 if (pc == 32'd0) begin
-                    mem_addr <= pc[15:0];
+                    mem_addr <= pc[15:0]; 
                 end
                 else begin
                     mem_addr <= (Jump)? pc_out_j[15:0]: (Branch)? pc_out_b[15:0]: pc[15:0];
+                    pc <= (Jump)? pc_out_j: (Branch)? pc_out_b: pc;
                 end
                 state <= RED1;
                 mem_en <= 1;
@@ -274,17 +274,17 @@ module ControlUnit(
                 state <= RED2;
             end
             RED2: begin 
-                state <= RED3;
-            end
-            RED3: begin
                 state <= DECODE;
+            end
+            DECODE: begin
+                state <= RED3;
                 instr_reg <= mem_dout;
                 pc <= pc + 1;
                 ID <= 1;
                 IF <= 0;
                 decoder_en <= 1;
             end
-            DECODE: begin
+            RED3: begin
                 if ((path_index == 4'd0)|(path_index == 4'd6))begin
                     state <= REGWRITE;
                 end
