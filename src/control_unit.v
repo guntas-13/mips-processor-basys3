@@ -259,7 +259,6 @@ module ControlUnit(
             counter <= counter + 1;
         end        
     end
-    
     always @ (posedge (clk & top_en))
     begin
         case(state)
@@ -302,15 +301,20 @@ module ControlUnit(
                         state <= SINK;
                     end
                     else state <= REGFILE;
-                    decoder_done <= 0;
-                    decoder_en <= 0;
                     pc <= pc + 1;
-                    decoder_en <= 1;
                     ID <= 1;
                     IF <= 0;
+                    
                     mem_en <= 0;
                     mem_ren <= 0;
-                    decoder_done <= decoder_done_wire;
+                    mem_wen <= 0;
+                    decoder_en <= 1;
+                    reg_en <= 0;
+                    alu_en <= 0;
+                    jump_en <= 0;
+                    branch_en <= 0;
+                    reg_write <= 0;
+
             end
             REGFILE: begin
                     if ((path_index == 4'd1) | (path_index == 4'd2) | (path_index == 4'd3) | (path_index == 4'd4) | (path_index == 4'd7)) begin
@@ -319,13 +323,22 @@ module ControlUnit(
                     else begin //path_index == 4'd8
                         state <= JUMP;
                     end
-                    register_done <= 0;
-                    reg_en <= 0;
+                    
+//                    reg_en <= 1;
+                    mem_en <= 0;
+                    mem_ren <= 0;
+                    mem_wen <= 0;
+                    decoder_en <= 0;
                     reg_en <= 1;
+                    alu_en <= 0;
+                    jump_en <= 0;
+                    branch_en <= 0;
+                    reg_write <= 0;
+                    
                     reg_write <= 0;
                     ID <= 0;
                     REG <= 1;
-                    register_done <= register_done_wire;
+//                    register_done <= register_done_wire;
             end
             EXECUTE: begin
                     if (path_index == 4'd1) begin
@@ -340,9 +353,19 @@ module ControlUnit(
                     else begin // (path_index == 4'd4)
                         state <= BRANCH;
                     end
-                    alu_en <= 0;
-                    alu_done <= 0;
+                    
+//                    alu_done <= 0;
+//                    alu_en <= 1;
+                    mem_en <= 0;
+                    mem_ren <= 0;
+                    mem_wen <= 0;
+                    decoder_en <= 0;
+                    reg_en <= 0;
                     alu_en <= 1;
+                    jump_en <= 0;
+                    branch_en <= 0;
+                    reg_write <= 0;
+                    
                     EX <= 1;
                     REG <= 0;
                     alu_done <= alu_done_wire;
@@ -383,38 +406,68 @@ module ControlUnit(
                         state <= FETCH;
                     end
                     register_done <= 0;
-                    reg_en <= 0;
+//                    reg_en <= 0;
                     reg_write <= 0;
                     WB <= 1;
                     ID <= 0;
                     EX <= 0;
-                    reg_en <= 1;
-                    reg_write <= 1;
+//                    reg_en <= 1;
                     mem_en <= 0;
                     mem_ren <= 0;
                     mem_wen <= 0;
+                    decoder_en <= 0;
+                    reg_en <= 1;
+                    alu_en <= 0;
+                    jump_en <= 0;
+                    branch_en <= 0;
+                    
+                    reg_write <= 1;
+//                    mem_en <= 0;
+//                    mem_ren <= 0;
+//                    mem_wen <= 0;
                     MEM <= 0;
                     REG <= 0;
                     register_done <= register_done_wire;
             end
             JUMP: begin
                     state <= FETCH;
-                    jump_done <= 0;
-                    jump_en <= 0;
-                    pc <= pc_out_j;
+//                    jump_done <= 0;
+//                    jump_en <= 0;
+                    mem_en <= 0;
+                    mem_ren <= 0;
+                    mem_wen <= 0;
+                    decoder_en <= 0;
+                    reg_en <= 0;
+                    alu_en <= 0;
                     jump_en <= 1;
+                    branch_en <= 0;
+                    reg_write <= 0;
+
+
+                    pc <= pc_out_j;
+//                    jump_en <= 1;
                     JU <= 1;
                     ID <= 0;
                     WB <= 0;
                     REG <= 0;
-                    jump_done <= jump_done_wire;
+//                    jump_done <= jump_done_wire;
             end
             BRANCH: begin
                     state <= FETCH;
-                    branch_done <= 0;
-                    branch_en <= 0;
-                    pc <= pc_out_b;
+//                    branch_done <= 0;
+//                    branch_en <= 0;
+                    mem_en <= 0;
+                    mem_ren <= 0;
+                    mem_wen <= 0;
+                    decoder_en <= 0;
+                    reg_en <= 0;
+                    alu_en <= 0;
+                    jump_en <= 0;
                     branch_en <= 1;
+                    reg_write <= 0;
+                    
+                    pc <= pc_out_b;
+//                    branch_en <= 1;
                     BR <= 1;
                     EX <= 0;
                     branch_done <= branch_done_wire;
