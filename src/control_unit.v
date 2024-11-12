@@ -251,7 +251,7 @@ module ControlUnit(
     end
     
     always @ (posedge fast_clk) begin
-        if (counter == 25'd250000) begin
+        if (counter == 25'd25000) begin
             counter <= 0;
             clk <= ~clk;
         end
