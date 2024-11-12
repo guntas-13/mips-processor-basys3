@@ -22,7 +22,7 @@ module ControlUnit(
     // Variables
     reg [31:0] pc;
     reg [31:0] instr_reg;
-    reg [3:0] state;
+    reg [4:0] state;
     wire [3:0] path_index;
     reg [24:0] counter;
     reg clk;
@@ -189,27 +189,29 @@ module ControlUnit(
     seven_seg_display seven_seg(
     .clock_100Mhz(fast_clk),
     .reset(0),
-    .displayed_number(infer_data),
+    .displayed_number(read_data2[15:0]),
     .Anode_Activate(Anode_Activate),
     .LED_out(LED_out)
     );
 
     // STATES
-    parameter IDLESRC = 4'b0000;
-    parameter FETCH = 4'b0001;
-    parameter RED1 = 4'b0010;
-    parameter RED2 = 4'b0011;
-    parameter DECODE = 4'b0100;
-    parameter RED3  = 4'b0101;
-    parameter REGFILE  = 4'b0110;
-    parameter EXECUTE  = 4'b0111;
-    parameter MEMORY  = 4'b1000;
-    parameter RED4 = 4'b1001;
-    parameter RED5 = 4'b1010;
-    parameter REGWRITE  = 4'b1011;
-    parameter JUMP = 4'b1100;
-    parameter BRANCH = 4'b1101;
-    parameter SINK = 4'b1110; 
+    parameter IDLESRC = 5'b00000;
+    parameter FETCH = 5'b00001;
+    parameter RED1 = 5'b00010;
+    parameter RED2 = 5'b00011;
+    parameter RED3  = 5'b00100;
+    parameter DECODE = 5'b00101;
+    parameter RED4 = 5'b00110;
+    parameter REGFILE  = 5'b00111;
+    parameter EXECUTE  = 5'b01000;
+    parameter MEMORY  = 5'b01001;
+    parameter RED5 = 5'b01010;
+    parameter RED6 = 5'b01011;
+    parameter RED7 = 5'b01100;
+    parameter REGWRITE = 5'b01101;
+    parameter JUMP = 5'b01110;
+    parameter BRANCH = 5'b01111;
+    parameter SINK = 5'b10000; 
 
     initial begin
         pc <= 32'd0;
@@ -219,7 +221,7 @@ module ControlUnit(
     end
     
     always @ (posedge fast_clk) begin
-        if (counter == 25'd1000000) begin
+        if (counter == 25'd15000000) begin //15000000
             counter <= 0;
             clk <= ~clk;
         end
@@ -249,7 +251,6 @@ module ControlUnit(
                 end
                 else begin
                     mem_addr <= (Jump)? pc_out_j[15:0]: (Branch)? pc_out_b[15:0]: pc[15:0];
-                    pc <= (Jump)? pc_out_j: (Branch)? pc_out_b: pc;
                 end
                 state <= RED1;
                 mem_en <= 1;
@@ -266,25 +267,34 @@ module ControlUnit(
                 SK <= 0;
                 reg_en <= 0;
                 reg_write <= 0;
-                branch_en <= 0;
-                jump_en <= 0;
                 alu_en <= 0;
             end
             RED1: begin
                 state <= RED2;
+                if (pc == 32'd0) begin
+                    pc <= pc; 
+                end
+                else begin
+                    pc <= (Jump)? pc_out_j: (Branch)? pc_out_b: pc;
+                end
             end
             RED2: begin 
+                state <= RED3;
+                jump_en <= 0;
+                branch_en <= 0;
+            end
+            RED3: begin 
                 state <= DECODE;
+                instr_reg <= mem_dout;
             end
             DECODE: begin
-                state <= RED3;
-                instr_reg <= mem_dout;
+                state <= RED4;
                 pc <= pc + 1;
                 ID <= 1;
                 IF <= 0;
                 decoder_en <= 1;
             end
-            RED3: begin
+            RED4: begin
                 if ((path_index == 4'd0)|(path_index == 4'd6))begin
                     state <= REGWRITE;
                 end
@@ -333,14 +343,14 @@ module ControlUnit(
             end
             MEMORY: begin
                 if (path_index == 4'd2) begin
-                    state <= RED4;
+                    state <= RED5;
                     mem_en <= 1;
                     mem_ren <= 1;
                     mem_wen <= 0;
                     mem_addr <= alu_result[15:0];
                 end
                 else begin // (path_index == 4'd3)
-                    state <= FETCH;
+                    state <= RED5;
                     mem_en <= 1;
                     mem_wen <= 1;
                     mem_ren <= 0;
@@ -352,10 +362,18 @@ module ControlUnit(
                 MEM <= 1;
                 EX <= 0;
             end
-            RED4: begin
-                state <= RED5;
-            end
             RED5: begin
+                if (path_index == 4'd2) begin
+                    state <= RED6;
+                end
+                else begin // (path_index == 4'd3)
+                    state <= FETCH;
+                end
+            end
+            RED6: begin
+                state <= RED7;
+            end
+            RED7: begin
                 state <= REGWRITE;
             end
             REGWRITE: begin
