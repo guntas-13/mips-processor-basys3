@@ -47,9 +47,13 @@ initial begin
     infer <= 0;
     #5;
     top_en <= 1;
-    #150;
+    #200;
     infer <= 1;
-    infer_addr <= 1;
+    infer_addr <= 16;
+    #20;
+    infer_addr <= 17;
+    #20;
+    infer_addr <= 18;
     #20;
     $finish();
 end

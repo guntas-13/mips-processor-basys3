@@ -104,3 +104,33 @@ set_property PACKAGE_PIN W13 [get_ports {infer_addr[6]}]
 set_property PACKAGE_PIN V2 [get_ports {infer_addr[7]}]
 set_property PACKAGE_PIN T3 [get_ports {infer_addr[8]}]
 set_property PACKAGE_PIN T2 [get_ports {infer_addr[9]}]
+
+set_property IOSTANDARD LVCMOS33 [get_ports en_IF]
+set_property SLEW SLOW [get_ports en_IF]
+set_property DRIVE 12 [get_ports en_IF]
+set_property PACKAGE_PIN V14 [get_ports en_IF]
+
+set_property IOSTANDARD LVCMOS33 [get_ports en_ID]
+set_property SLEW SLOW [get_ports en_ID]
+set_property DRIVE 12 [get_ports en_ID]
+set_property PACKAGE_PIN U14 [get_ports en_ID]
+
+set_property IOSTANDARD LVCMOS33 [get_ports en_REG]
+set_property SLEW SLOW [get_ports en_REG]
+set_property DRIVE 12 [get_ports en_REG]
+set_property PACKAGE_PIN U15 [get_ports en_REG]
+
+set_property IOSTANDARD LVCMOS33 [get_ports en_EX]
+set_property SLEW SLOW [get_ports en_EX]
+set_property DRIVE 12 [get_ports en_EX]
+set_property PACKAGE_PIN W18 [get_ports en_EX]
+
+set_property IOSTANDARD LVCMOS33 [get_ports en_MEM]
+set_property SLEW SLOW [get_ports en_MEM]
+set_property DRIVE 12 [get_ports en_MEM]
+set_property PACKAGE_PIN V19 [get_ports en_MEM]
+
+set_property IOSTANDARD LVCMOS33 [get_ports en_WB]
+set_property SLEW SLOW [get_ports en_WB]
+set_property DRIVE 12 [get_ports en_WB]
+set_property PACKAGE_PIN U19 [get_ports en_WB]

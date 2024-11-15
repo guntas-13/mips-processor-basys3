@@ -1,3 +1,5 @@
-lw $s0, 0($gp)
-sw $s0, 1($gp)
+add $s0, $zero, $gp
+addi $s1, $zero, 1
+mult $s1, $gp
+mflo $s2
 sysend

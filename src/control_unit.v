@@ -6,8 +6,8 @@ module ControlUnit(
     input infer,
     input [9:0] infer_addr,
 //    output [31:0] infer_data,
-    output reg ID,
     output reg IF,
+    output reg ID,
     output reg REG,
     output reg EX,
     output reg MEM,
@@ -15,6 +15,12 @@ module ControlUnit(
     output reg JU,
     output reg BR,
     output reg SK,
+    output en_IF,
+    output en_ID,
+    output en_REG,
+    output en_EX,
+    output en_MEM,
+    output en_WB,
     output [6:0] LED_out,
     output [3:0] Anode_Activate
 );
@@ -37,10 +43,13 @@ module ControlUnit(
     wire [31:0] read_data1;
     wire [31:0] read_data2;
 
+    wire [4:0] read_reg1;
+    assign read_reg1 = (infer)? infer_addr[4:0]: rs;
+    
     RegisterFile regs(
     .en(reg_en),
     .reg_write(reg_write),
-    .read_reg1(rs),
+    .read_reg1(read_reg1),
     .read_reg2(rt),
     .write_reg(write_reg),
     .write_data(write_data),
@@ -184,12 +193,12 @@ module ControlUnit(
     );
     
     wire [15:0] infer_data;
-    assign infer_data = (infer)? mem_dout[15:0]: 16'd0;
+    assign infer_data = (infer)? read_data1[15:0]: 16'd0;
     
     seven_seg_display seven_seg(
     .clock_100Mhz(fast_clk),
     .reset(0),
-    .displayed_number(read_data2[15:0]),
+    .displayed_number(infer_data),
     .Anode_Activate(Anode_Activate),
     .LED_out(LED_out)
     );
@@ -203,22 +212,34 @@ module ControlUnit(
     parameter DECODE = 5'b00101;
     parameter RED4 = 5'b00110;
     parameter REGFILE  = 5'b00111;
+    parameter RED9 = 5'b10010;
     parameter EXECUTE  = 5'b01000;
+    parameter RED10 = 5'b10011;
     parameter MEMORY  = 5'b01001;
     parameter RED5 = 5'b01010;
     parameter RED6 = 5'b01011;
     parameter RED7 = 5'b01100;
     parameter REGWRITE = 5'b01101;
-    parameter JUMP = 5'b01110;
-    parameter BRANCH = 5'b01111;
-    parameter SINK = 5'b10000; 
+    parameter RED8 = 5'b01110;
+    parameter JUMP = 5'b01111;
+    parameter BRANCH = 5'b10000;
+    parameter SINK = 5'b10001; 
 
+    reg [4:0] reg_cnt;
     initial begin
         pc <= 32'd0;
         state <= IDLESRC;
         counter <= 4'd0;
         clk <= 1'd1;
+        reg_cnt <= 5'd0;
     end
+    
+    assign en_IF = mem_en;
+    assign en_ID = decoder_en;
+    assign en_REG = reg_en;
+    assign en_EX = alu_en;
+    assign en_MEM = mem_en;
+    assign en_WB = reg_en;   
     
     always @ (posedge fast_clk) begin
         if (counter == 25'd15000000) begin //15000000
@@ -293,6 +314,9 @@ module ControlUnit(
                 ID <= 1;
                 IF <= 0;
                 decoder_en <= 1;
+                mem_en <= 0;
+                mem_ren <= 0;
+                mem_wen <= 0;
             end
             RED4: begin
                 if ((path_index == 4'd0)|(path_index == 4'd6))begin
@@ -305,26 +329,33 @@ module ControlUnit(
                     state <= SINK;
                 end 
                 else state <= REGFILE; // many instructions
-                mem_en <= 0;
-                mem_ren <= 0;
-                mem_wen <= 0;
 
             end
             REGFILE: begin
-                    if ((path_index == 4'd1) | (path_index == 4'd2) | (path_index == 4'd3) | (path_index == 4'd4) | (path_index == 4'd7)) begin
-                        state <= EXECUTE;
-                    end
-                    else begin //path_index == 4'd8
-                        state <= JUMP;
-                    end
                     decoder_en <= 0;
                     reg_en <= 1;
                     reg_write <= 0;
                     ID <= 0;
                     REG <= 1;
+                    state <= RED9;
+            end
+            RED9: begin
+                if ((path_index == 4'd1) | (path_index == 4'd2) | (path_index == 4'd3) | (path_index == 4'd4) | (path_index == 4'd7)) begin
+                        state <= EXECUTE;
+                    end
+                    else begin //path_index == 4'd8
+                        state <= JUMP;
+                    end
             end
             EXECUTE: begin
-                    if (path_index == 4'd1) begin
+                    reg_en <= 0;
+                    alu_en <= 1;
+                    EX <= 1;
+                    REG <= 0;
+                    state <= RED10;
+            end
+            RED10: begin
+                if (path_index == 4'd1) begin
                         state <= REGWRITE;
                     end
                     else if ((path_index == 4'd2) | (path_index == 4'd3)) begin
@@ -336,10 +367,6 @@ module ControlUnit(
                     else begin // (path_index == 4'd4)
                         state <= BRANCH;
                     end
-                    reg_en <= 0;
-                    alu_en <= 1;
-                    EX <= 1;
-                    REG <= 0;
             end
             MEMORY: begin
                 if (path_index == 4'd2) begin
@@ -377,12 +404,7 @@ module ControlUnit(
                 state <= REGWRITE;
             end
             REGWRITE: begin
-                if (path_index == 4'd6) begin
-                    state <= JUMP;
-                end
-                else begin // (path_index == 4'd0) | (path_index == 4'd1) | (path_index == 4'd2)
-                    state <= FETCH;
-                end
+                state <= RED8;
                 WB <= 1;
                 ID <= 0;
                 EX <= 0;
@@ -394,6 +416,14 @@ module ControlUnit(
                 alu_en <= 0;
                 reg_en <= 1;
                 reg_write <= 1;
+            end
+            RED8: begin
+                if (path_index == 4'd6) begin
+                    state <= JUMP;
+                end
+                else begin // (path_index == 4'd0) | (path_index == 4'd1) | (path_index == 4'd2)
+                    state <= FETCH;
+                end
             end
             JUMP: begin
                 state <= FETCH;
@@ -418,14 +448,18 @@ module ControlUnit(
             end
             SINK: begin
                 if (infer) begin
-                    mem_en <= 1;
-                    mem_ren <= 1;
-                    mem_wen <= 0;
-                    mem_addr <= infer_addr + 6300;
+                    if (reg_cnt == 5'd1) begin
+                        reg_en <= ~reg_en;
+                        reg_cnt <= 0;
+                    end
+                    else begin
+                        reg_cnt <= reg_cnt + 1;
+                    end
                 end
                 state <= SINK;
                 ID <= 0;
                 SK <= 1;
+                decoder_en <= 0;
             end
         endcase    
     end
