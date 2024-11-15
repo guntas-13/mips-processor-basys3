@@ -19,12 +19,14 @@ module RegisterFile(
         registers[28] <= 32'd6300;
     end
 
-    always @(posedge (en)) begin
+    always @(posedge en) begin
         read_data1 <= registers[read_reg1];
         read_data2 <= registers[read_reg2];
-
-        if (reg_write && write_reg != 5'd0) begin
-            registers[write_reg] <= write_data;
-        end
     end
+    
+    always @(posedge (en && reg_write)) begin
+//        if (write_reg != 5'd0) begin
+        registers[write_reg] <= write_data;
+//        end
+    end 
 endmodule
