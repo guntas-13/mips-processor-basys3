@@ -15,12 +15,6 @@ module ControlUnit(
     output reg JU,
     output reg BR,
     output reg SK,
-    output en_IF,
-    output en_ID,
-    output en_REG,
-    output en_EX,
-    output en_MEM,
-    output en_WB,
     output [6:0] LED_out,
     output [3:0] Anode_Activate
 );
@@ -42,14 +36,11 @@ module ControlUnit(
     wire [31:0] write_data;
     wire [31:0] read_data1;
     wire [31:0] read_data2;
-
-    wire [4:0] read_reg1;
-    assign read_reg1 = (infer)? infer_addr[4:0]: rs;
     
     RegisterFile regs(
     .en(reg_en),
     .reg_write(reg_write),
-    .read_reg1(read_reg1),
+    .read_reg1(rs),
     .read_reg2(rt),
     .write_reg(write_reg),
     .write_data(write_data),
@@ -193,7 +184,7 @@ module ControlUnit(
     );
     
     wire [15:0] infer_data;
-    assign infer_data = (infer)? read_data1[15:0]: 16'd0;
+    assign infer_data = (infer)? mem_dout[15:0]: 16'd0;
     
     seven_seg_display seven_seg(
     .clock_100Mhz(fast_clk),
@@ -208,41 +199,29 @@ module ControlUnit(
     parameter FETCH = 5'b00001;
     parameter RED1 = 5'b00010;
     parameter RED2 = 5'b00011;
-    parameter RED3  = 5'b00100;
+    parameter RED3 = 5'b00100;
     parameter DECODE = 5'b00101;
     parameter RED4 = 5'b00110;
     parameter REGFILE  = 5'b00111;
-    parameter RED9 = 5'b10010;
     parameter EXECUTE  = 5'b01000;
-    parameter RED10 = 5'b10011;
     parameter MEMORY  = 5'b01001;
     parameter RED5 = 5'b01010;
     parameter RED6 = 5'b01011;
     parameter RED7 = 5'b01100;
     parameter REGWRITE = 5'b01101;
-    parameter RED8 = 5'b01110;
-    parameter JUMP = 5'b01111;
-    parameter BRANCH = 5'b10000;
-    parameter SINK = 5'b10001; 
+    parameter JUMP = 5'b01110;
+    parameter BRANCH = 5'b01111;
+    parameter SINK = 5'b10000; 
 
-    reg [4:0] reg_cnt;
     initial begin
         pc <= 32'd0;
         state <= IDLESRC;
         counter <= 4'd0;
         clk <= 1'd1;
-        reg_cnt <= 5'd0;
     end
     
-    assign en_IF = mem_en;
-    assign en_ID = decoder_en;
-    assign en_REG = reg_en;
-    assign en_EX = alu_en;
-    assign en_MEM = mem_en;
-    assign en_WB = reg_en;   
-    
     always @ (posedge fast_clk) begin
-        if (counter == 25'd15000000) begin //15000000
+        if (counter == 25'd1) begin //1500000
             counter <= 0;
             clk <= ~clk;
         end
@@ -303,10 +282,11 @@ module ControlUnit(
                 state <= RED3;
                 jump_en <= 0;
                 branch_en <= 0;
+                
             end
-            RED3: begin 
-                state <= DECODE;
+            RED3: begin
                 instr_reg <= mem_dout;
+                state <= DECODE;
             end
             DECODE: begin
                 state <= RED4;
@@ -332,30 +312,20 @@ module ControlUnit(
 
             end
             REGFILE: begin
-                    decoder_en <= 0;
-                    reg_en <= 1;
-                    reg_write <= 0;
-                    ID <= 0;
-                    REG <= 1;
-                    state <= RED9;
-            end
-            RED9: begin
-                if ((path_index == 4'd1) | (path_index == 4'd2) | (path_index == 4'd3) | (path_index == 4'd4) | (path_index == 4'd7)) begin
+                    if ((path_index == 4'd1) | (path_index == 4'd2) | (path_index == 4'd3) | (path_index == 4'd4) | (path_index == 4'd7)) begin
                         state <= EXECUTE;
                     end
                     else begin //path_index == 4'd8
                         state <= JUMP;
                     end
+                    decoder_en <= 0;
+                    reg_en <= 1;
+                    reg_write <= 0;
+                    ID <= 0;
+                    REG <= 1;
             end
             EXECUTE: begin
-                    reg_en <= 0;
-                    alu_en <= 1;
-                    EX <= 1;
-                    REG <= 0;
-                    state <= RED10;
-            end
-            RED10: begin
-                if (path_index == 4'd1) begin
+                    if (path_index == 4'd1) begin
                         state <= REGWRITE;
                     end
                     else if ((path_index == 4'd2) | (path_index == 4'd3)) begin
@@ -367,44 +337,47 @@ module ControlUnit(
                     else begin // (path_index == 4'd4)
                         state <= BRANCH;
                     end
+                    reg_en <= 0;
+                    alu_en <= 1;
+                    EX <= 1;
+                    REG <= 0;
             end
             MEMORY: begin
                 if (path_index == 4'd2) begin
-                    state <= RED5;
                     mem_en <= 1;
                     mem_ren <= 1;
                     mem_wen <= 0;
                     mem_addr <= alu_result[15:0];
+                    state <= RED5;
                 end
                 else begin // (path_index == 4'd3)
-                    state <= RED5;
                     mem_en <= 1;
                     mem_wen <= 1;
                     mem_ren <= 0;
                     mem_addr <= alu_result[15:0];
                     mem_din <= read_data2;
+                    state <= FETCH;
                 end
-                
                 alu_en <= 0;
                 MEM <= 1;
                 EX <= 0;
             end
             RED5: begin
-                if (path_index == 4'd2) begin
-                    state <= RED6;
-                end
-                else begin // (path_index == 4'd3)
-                    state <= FETCH;
-                end
+                state <= RED6;
             end
             RED6: begin
-                state <= RED7;
-            end
-            RED7: begin
                 state <= REGWRITE;
             end
+//            RED7: begin
+//                state <= REGWRITE;
+//            end
             REGWRITE: begin
-                state <= RED8;
+                if (path_index == 4'd6) begin
+                    state <= JUMP;
+                end
+                else begin // (path_index == 4'd0) | (path_index == 4'd1) | (path_index == 4'd2)
+                    state <= FETCH;
+                end
                 WB <= 1;
                 ID <= 0;
                 EX <= 0;
@@ -416,14 +389,6 @@ module ControlUnit(
                 alu_en <= 0;
                 reg_en <= 1;
                 reg_write <= 1;
-            end
-            RED8: begin
-                if (path_index == 4'd6) begin
-                    state <= JUMP;
-                end
-                else begin // (path_index == 4'd0) | (path_index == 4'd1) | (path_index == 4'd2)
-                    state <= FETCH;
-                end
             end
             JUMP: begin
                 state <= FETCH;
@@ -448,13 +413,10 @@ module ControlUnit(
             end
             SINK: begin
                 if (infer) begin
-                    if (reg_cnt == 5'd1) begin
-                        reg_en <= ~reg_en;
-                        reg_cnt <= 0;
-                    end
-                    else begin
-                        reg_cnt <= reg_cnt + 1;
-                    end
+                    mem_en <= 1;
+                    mem_ren <= 1;
+                    mem_wen <= 0;
+                    mem_addr <= infer_addr + 6300;
                 end
                 state <= SINK;
                 ID <= 0;
