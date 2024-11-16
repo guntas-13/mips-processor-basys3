@@ -1,5 +1,20 @@
-add $s0, $zero, $gp
-addi $s1, $zero, 1
-mult $s1, $gp
-mflo $s2
+main: lw $a0, 0($gp)
+jal fact
+sw $v0, 1($gp)
 sysend
+fact: addi $sp, $sp, -2
+sw $ra, 1($sp)
+sw $a0, 0($sp)
+slti $t0, $a0, 1
+beq $t0, $zero, L1
+addi $v0, $zero, 1
+addi $sp, $sp, 2
+jr $ra
+L1: addi $a0, $a0, -1
+jal fact
+lw $a0, 0($sp)
+lw $ra, 1($sp)
+addi $sp, $sp, 2
+mult $a0, $v0
+mflo $v0
+jr $ra
