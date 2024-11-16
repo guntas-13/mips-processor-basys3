@@ -1,0 +1,13 @@
+main: lw $a0, 0($gp)
+lw $a1, 1($gp)
+jal gcd
+sw $v0, 2($gp)
+sysend
+gcd: beq $a1, $zero, END_GCD
+div $a0, $a1
+mfhi $t0
+add $a0, $zero, $a1
+add $a1, $zero, $t0
+j gcd
+END_GCD: add $v0, $zero, $a0
+jr $ra
