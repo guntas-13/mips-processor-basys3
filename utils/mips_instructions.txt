@@ -1,12 +1,13 @@
-lw $s0, 0($gp)
-lw $s1, 1($gp)
-add $t0, $s0, $s1
-beq $t0, $s0, exit
-j next
-next: div $s0, $s1
-mflo $t1
-sw $t0, 2($gp)
-sw $t1, 3($gp)
-jal exit
+main: lw $a0, 0($gp)
+lw $a1, 1($gp)
+jal gcd
+sw $v0, 2($gp)
 sysend
-exit: jr $ra
+gcd: beq $a1, $zero, END_GCD
+div $a0, $a1
+mfhi $t0
+add $a0, $zero, $a1
+add $a1, $zero, $t0
+j gcd
+END_GCD: add $v0, $zero, $a0
+jr $ra
