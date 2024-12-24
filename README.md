@@ -2,7 +2,11 @@
 
 ### Team ALUminati - ES215 Computer Organization and Architecture
 
+`mips_v3.2` is the stable and FPGA-implementation ready version of the MIPS processor. The processor is implemented on the Basys3 FPGA board.
+![](./Illustration.png)
+
 ## BRAM
+
 <div align = "center">
     <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/master/media/MemOrganization.png" style="width: 100%">
 </div>
@@ -12,6 +16,7 @@
 </div>
 
 ## ALU
+
 <div align = "center">
     <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/master/media/ALU.png" style="width: 100%">
 </div>
@@ -30,16 +35,19 @@
 </div>
 
 ## Register File
+
 <div align = "center">
     <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/master/media/reg_run.png" style="width: 100%">
 </div>
 
 ## 2x1 MUX
+
 <div align = "center">
     <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/master/media/mux_run.png" style="width: 100%">
 </div>
 
 ## Factorial Waveform
+
 <div align = "center">
     <img src = "https://github.com/guntas-13/mips-processor-basys3/blob/mips_v1/media/factorial_waveform.png" style="width: 100%">
 </div>
